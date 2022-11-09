@@ -60,16 +60,15 @@ dependencies {
 
     implementation("com.google.code.gson:gson:2.9.0")
 
-//    implementation("software.amazon.awssdk:bom:2.18.10")
-//    implementation("software.amazon.awssdk:auth")
-//    implementation("software.amazon.awssdk:aws-core")
-//    implementation("software.amazon.awssdk:kms")
-//
-//    implementation("com.amazonaws:aws-encryption-sdk-java:2.4.0")
-//    implementation("com.amazonaws:aws-java-sdk-kms")
+    implementation("software.amazon.awssdk:bom:2.18.10")
+    implementation("software.amazon.awssdk:aws-core:2.18.10")
+    implementation("software.amazon.awssdk:auth")
+    implementation("software.amazon.awssdk:kms:2.18.10")
+    implementation("software.amazon.awssdk:ssm:2.18.10")
+    implementation("software.amazon.awssdk:s3:2.18.10")
 
-//    implementation("io.awspring.cloud:spring-cloud-starter-aws:2.4.1")
-//    implementation("io.awspring.cloud:spring-cloud-starter-aws-parameter-store-config:2.4.1")
+    implementation("io.awspring.cloud:spring-cloud-starter-aws:2.4.1")
+    implementation("io.awspring.cloud:spring-cloud-starter-aws-parameter-store-config:2.4.1")
 
     // test
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
@@ -90,7 +89,7 @@ detekt {
 
 tasks.getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
     enabled = true
-    mainClass.set("com.bithumbsystems.cms.CmsAppApiApplication")
+    mainClass.set("com.bithumbsystems.cms.CmsMngApiApplication")
 }
 
 tasks.jar {
