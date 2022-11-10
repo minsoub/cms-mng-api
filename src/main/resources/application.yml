@@ -12,15 +12,16 @@ spring:
             auto-index-creation: true
             uuid-representation: standard
             field-naming-strategy: org.springframework.data.mapping.model.SnakeCaseFieldNamingStrategy
+            uri: localhost
+            port: 27017
+            username: cms-systems
+            database: smartcmslocaldb
+            password:
     redis:
         host: localhost
         port: 6379
     pid:
         file: ${instance.pid:8282282}
-    config:
-        import: aws-properties.yml
-        activate:
-            on-profile: default, local
 
 application:
     version: /v1
@@ -56,10 +57,32 @@ cloud:
     aws:
         param-store:
             prefix: /cms
-            doc-name: docdb # todo
+            smart-prefix: /smartadmin
+            doc-name: mongodb
             kms-name: kms
-            message-name: message
             auth-name: auth
             crypto-name: crypto
             salt-name: salt
             iv-name: iv
+            redis-name: redis
+
+---
+spring:
+    config:
+        import: classpath:aws-properties.yml
+        activate:
+            on-profile: local
+
+---
+spring:
+    config:
+        import: classpath:aws-properties-dev.yml
+        activate:
+            on-profile: dev
+
+---
+spring:
+    config:
+        import: classpath:aws-properties-eks-dev.yml
+        activate:
+            on-profile: eks-dev

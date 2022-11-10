@@ -1,7 +1,13 @@
-package com.bithumbsystems.cms.api.config.aws.client.impl
+package com.bithumbsystems.cms.api.config.client.impl
 
 import com.bithumbsystems.cms.api.config.aws.AwsProperties
-import com.bithumbsystems.cms.api.config.aws.client.AwsClientBuilder
+import com.bithumbsystems.cms.api.config.client.ClientBuilder
+import com.mongodb.MongoClientSettings
+import com.mongodb.reactivestreams.client.MongoClient
+import com.mongodb.reactivestreams.client.MongoClients
+import org.redisson.Redisson
+import org.redisson.api.RedissonReactiveClient
+import org.redisson.config.Config
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.auth.credentials.ProfileCredentialsProvider
@@ -13,7 +19,7 @@ import java.net.URI
 
 @Component
 @Profile(value = ["local", "default"])
-class LocalAwsClientBuilderImpl : AwsClientBuilder {
+class LocalClientBuilderImpl : ClientBuilder {
     override fun buildSsm(awsProperties: AwsProperties): SsmClient =
         SsmClient.builder().credentialsProvider(
             ProfileCredentialsProvider.create(awsProperties.profileName)
@@ -31,4 +37,8 @@ class LocalAwsClientBuilderImpl : AwsClientBuilder {
             .endpointOverride(URI.create(awsProperties.kmsEndPoint))
             .credentialsProvider(ProfileCredentialsProvider.create(awsProperties.profileName))
             .build()
+
+    override fun buildMongo(mongoClientSettings: MongoClientSettings): MongoClient = MongoClients.create()
+
+    override fun buildRedis(config: Config): RedissonReactiveClient = Redisson.create().reactive()
 }

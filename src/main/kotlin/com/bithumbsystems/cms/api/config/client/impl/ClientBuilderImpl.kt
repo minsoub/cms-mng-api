@@ -1,7 +1,13 @@
-package com.bithumbsystems.cms.api.config.aws.client.impl
+package com.bithumbsystems.cms.api.config.client.impl
 
 import com.bithumbsystems.cms.api.config.aws.AwsProperties
-import com.bithumbsystems.cms.api.config.aws.client.AwsClientBuilder
+import com.bithumbsystems.cms.api.config.client.ClientBuilder
+import com.mongodb.MongoClientSettings
+import com.mongodb.reactivestreams.client.MongoClient
+import com.mongodb.reactivestreams.client.MongoClients
+import org.redisson.Redisson
+import org.redisson.api.RedissonReactiveClient
+import org.redisson.config.Config
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.regions.Region
@@ -12,7 +18,7 @@ import java.net.URI
 
 @Component
 @Profile(value = ["dev", "qa", "prod", "eks-dev"])
-class AwsClientBuilderImpl : AwsClientBuilder {
+class ClientBuilderImpl : ClientBuilder {
     override fun buildSsm(awsProperties: AwsProperties): SsmClient =
         SsmClient.builder().endpointOverride(URI.create(awsProperties.ssmEndPoint))
             .region(Region.of(awsProperties.region)).build()
@@ -23,4 +29,9 @@ class AwsClientBuilderImpl : AwsClientBuilder {
     override fun buildKms(awsProperties: AwsProperties): KmsAsyncClient =
         KmsAsyncClient.builder().region(Region.of(awsProperties.region))
             .endpointOverride(URI.create(awsProperties.kmsEndPoint)).build()
+
+    override fun buildMongo(mongoClientSettings: MongoClientSettings): MongoClient =
+        MongoClients.create(mongoClientSettings)
+
+    override fun buildRedis(config: Config): RedissonReactiveClient = Redisson.create(config).reactive()
 }

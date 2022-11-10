@@ -1,78 +1,117 @@
 package com.bithumbsystems.cms.api.config.aws
 
-import com.bithumbsystems.cms.api.config.aws.client.AwsClientBuilder
+import com.bithumbsystems.cms.api.config.client.ClientBuilder
+import com.bithumbsystems.cms.api.config.mongo.MongoProperties
+import com.bithumbsystems.cms.api.config.redis.RedisProperties
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
-import software.amazon.awssdk.services.ssm.SsmClient
 import software.amazon.awssdk.services.ssm.model.GetParameterRequest
 
 @Configuration
 class ParameterStoreConfig(
     awsProperties: AwsProperties,
     parameterStoreProperties: ParameterStoreProperties,
-    awsClientBuilder: AwsClientBuilder,
+    clientBuilder: ClientBuilder,
+    localMongoProperties: MongoProperties,
+    localRedisProperties: RedisProperties,
     @Value("\${spring.profiles.active}") profile: String
 ) {
-    private val ssmClient = awsClientBuilder.buildSsm(awsProperties)
-    private val profileName =
-        if (profile == "local" || profile == "default") profile else awsProperties.profileName
+    private val ssmClient = clientBuilder.buildSsm(awsProperties)
+    private val isLocalOrDefault = profile == "local" || profile == "default"
+    private val profileName = if (isLocalOrDefault) profile else awsProperties.profileName
+
+    val mongoProperties = if (isLocalOrDefault) localMongoProperties else MongoProperties(
+        getParameterValue(
+            parameterStoreProperties.prefix,
+            parameterStoreProperties.docName,
+            ParameterStoreCode.DB_URL.value
+        ),
+        getParameterValue(
+            parameterStoreProperties.prefix,
+            parameterStoreProperties.docName,
+            ParameterStoreCode.DB_USER.value
+        ),
+        getParameterValue(
+            parameterStoreProperties.prefix,
+            parameterStoreProperties.docName,
+            ParameterStoreCode.DB_PASSWORD.value
+        ),
+        getParameterValue(
+            parameterStoreProperties.prefix,
+            parameterStoreProperties.docName,
+            ParameterStoreCode.DB_PORT.value
+        ),
+        getParameterValue(
+            parameterStoreProperties.prefix,
+            parameterStoreProperties.docName,
+            ParameterStoreCode.DB_NAME.value
+        )
+    )
+
+    val redisProperties = if (isLocalOrDefault) localRedisProperties else RedisProperties(
+        getParameterValue(
+            parameterStoreProperties.prefix,
+            parameterStoreProperties.redisName,
+            ParameterStoreCode.REDIS_HOST.value
+        ),
+        getParameterValue(
+            parameterStoreProperties.prefix,
+            parameterStoreProperties.redisName,
+            ParameterStoreCode.REDIS_PORT.value
+        ).toInt(),
+        getParameterValue(
+            parameterStoreProperties.prefix,
+            parameterStoreProperties.redisName,
+            ParameterStoreCode.REDIS_TOKEN.value
+        )
+    )
 
     init {
-        /*awsProperties.kmsKey = getParameterValue(
-            parameterStoreProperties.prefix,
-            ssmClient,
-            parameterStoreProperties.kmsName,
-            profileName,
-            ParameterStoreCode.KMS_ALIAS_NAME.value
-        )
-        awsProperties.saltKey = getParameterValue(
-            parameterStoreProperties.prefix,
-            ssmClient,
-            parameterStoreProperties.saltName,
-            profileName,
-            ParameterStoreCode.KMS_ALIAS_NAME.value
-        )
-        awsProperties.ivKey = getParameterValue(
-            parameterStoreProperties.prefix,
-            ssmClient,
-            parameterStoreProperties.ivName,
-            profileName,
-            ParameterStoreCode.KMS_ALIAS_NAME.value
-        )
-        awsProperties.jwtSecretKey = getParameterValue(
-            parameterStoreProperties.prefix,
-            ssmClient,
-            parameterStoreProperties.authName,
-            profileName,
-            ParameterStoreCode.JWT_SECRET_KEY.value
-        )
-        awsProperties.cryptoKey = getParameterValue(
-            parameterStoreProperties.prefix,
-            ssmClient,
-            parameterStoreProperties.cryptoName,
-            profileName,
-            ParameterStoreCode.CRYPTO_KEY.value
-        )*/
+        awsProperties.kmsKey =
+            getParameterValue(
+                parameterStoreProperties.smartPrefix,
+                parameterStoreProperties.kmsName,
+                ParameterStoreCode.KMS_ALIAS_NAME.value
+            )
+        awsProperties.saltKey =
+            getParameterValue(
+                parameterStoreProperties.smartPrefix,
+                parameterStoreProperties.saltName,
+                ParameterStoreCode.KMS_ALIAS_NAME.value
+            )
+        awsProperties.ivKey =
+            getParameterValue(
+                parameterStoreProperties.smartPrefix,
+                parameterStoreProperties.ivName,
+                ParameterStoreCode.KMS_ALIAS_NAME.value
+            )
+        awsProperties.jwtSecretKey =
+            getParameterValue(
+                parameterStoreProperties.smartPrefix,
+                parameterStoreProperties.authName,
+                ParameterStoreCode.JWT_SECRET_KEY.value
+            )
+        awsProperties.cryptoKey =
+            getParameterValue(
+                parameterStoreProperties.smartPrefix,
+                parameterStoreProperties.cryptoName,
+                ParameterStoreCode.CRYPTO_KEY.value
+            )
     }
 
     private final fun getParameterValue(
         prefix: String,
-        ssmClient: SsmClient,
         storeName: String,
-        profileName: String,
         type: String
     ): String = ssmClient.getParameter(
-        GetParameterRequest.builder()
-            .name(
-                String.format(
-                    "%s/%s_%s/%s",
-                    prefix,
-                    storeName,
-                    profileName,
-                    type
-                )
+        GetParameterRequest.builder().name(
+            String.format(
+                "%s/%s_%s/%s",
+                prefix,
+                storeName,
+                profileName,
+                type
             )
-            .withDecryption(true)
-            .build()
+        ).withDecryption(true).build()
     ).parameter().value()
 }

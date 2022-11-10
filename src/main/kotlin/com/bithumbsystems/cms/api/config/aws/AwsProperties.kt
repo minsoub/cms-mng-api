@@ -24,11 +24,12 @@ class AwsProperties(
 @ConfigurationProperties(prefix = "cloud.aws.param-store")
 class ParameterStoreProperties(
     val prefix: String,
+    val smartPrefix: String,
     val docName: String,
     val kmsName: String,
     val saltName: String,
     val ivName: String,
-    val messageName: String,
     val authName: String,
-    val cryptoName: String
+    val cryptoName: String,
+    val redisName: String
 )

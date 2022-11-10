@@ -63,3 +63,10 @@ JVM 옵션을 사용
 ```
 -Dkotlinx.coroutines.debug
 ```
+
+
+### 환경 변수 설정
+JVM 옵션을 사용(local, dev, qa, prod, eks-dev)
+```
+-Dspring.profiles.active=local
+```
