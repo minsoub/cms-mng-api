@@ -31,7 +31,6 @@ class MongoConfig(
     val parameterStoreConfig: ParameterStoreConfig,
     val clientBuilder: ClientBuilder
 ) : AbstractReactiveMongoConfiguration() {
-class MongoConfig : AbstractReactiveMongoConfiguration() {
 
     override fun getDatabaseName() = parameterStoreConfig.mongoProperties.mongodbName
 
@@ -46,7 +45,7 @@ class MongoConfig : AbstractReactiveMongoConfiguration() {
         mongoConverter: MappingMongoConverter
     ): ReactiveMongoTemplate = ReactiveMongoTemplate(mongoClient(), databaseName)
 
-    protected fun configureClientSettings(): MongoClientSettings =
+    private fun configureClientSettings(): MongoClientSettings =
         MongoClientSettings.builder()
             .streamFactoryFactory(NettyStreamFactoryFactory.builder().build())
             .applyConnectionString(getConnectionString(parameterStoreConfig.mongoProperties))
@@ -54,13 +53,7 @@ class MongoConfig : AbstractReactiveMongoConfiguration() {
 
     private fun getConnectionString(mongoProperties: MongoProperties): ConnectionString =
         ConnectionString(
-            String.format(
-                "mongodb://%s:%s@%s:%s",
-                mongoProperties.mongodbUser,
-                mongoProperties.mongodbPassword,
-                mongoProperties.mongodbUrl,
-                mongoProperties.mongodbPort
-            )
+            "mongodb://${mongoProperties.mongodbUser}:${mongoProperties.mongodbPassword}@${mongoProperties.mongodbUrl}:${mongoProperties.mongodbPort}"
         )
 
     @Bean

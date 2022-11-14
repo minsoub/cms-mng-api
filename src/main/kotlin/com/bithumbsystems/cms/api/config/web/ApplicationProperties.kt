@@ -9,7 +9,5 @@ class ApplicationProperties(
     val version: String,
     val prefix: String,
     val route: String,
-    val excludePrefixPath: Array<String>,
-    val siteId: String,
-    val roleType: String
+    val excludePrefixPath: Array<String>
 )

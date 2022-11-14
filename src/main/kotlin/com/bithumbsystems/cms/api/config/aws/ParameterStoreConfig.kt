@@ -104,14 +104,6 @@ class ParameterStoreConfig(
         storeName: String,
         type: String
     ): String = ssmClient.getParameter(
-        GetParameterRequest.builder().name(
-            String.format(
-                "%s/%s_%s/%s",
-                prefix,
-                storeName,
-                profileName,
-                type
-            )
-        ).withDecryption(true).build()
+        GetParameterRequest.builder().name("$prefix/${storeName}_$profileName/$type").withDecryption(true).build()
     ).parameter().value()
 }

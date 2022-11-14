@@ -28,7 +28,6 @@ application:
     prefix: /api
     route: /mng
     exclude-prefix-path: springdoc
-    role-type: ADMIN
 
 coroutine:
     io:
