@@ -11,6 +11,7 @@ import com.github.michaelbull.result.mapError
 import com.github.michaelbull.result.recover
 import kotlinx.coroutines.*
 import kotlinx.coroutines.reactor.ReactorContext
+import org.springframework.http.ResponseEntity
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 
@@ -31,38 +32,44 @@ object ServiceOperator {
         return requestIdThreadLocal.asContextElement(requestId)
     }
 
-    private fun errorHandler(throwable: Throwable): ErrorData = when (throwable) {
-        is IllegalArgumentException ->
+    fun errorHandler(throwable: Throwable, errorCode: ErrorCode? = ErrorCode.ILLEGAL_STATE): ErrorData =
+        errorCode?.let {
             ErrorData(
-                ErrorCode.ILLEGAL_ARGUMENT,
-                message = ErrorCode.ILLEGAL_ARGUMENT.message
+                code = errorCode,
+                message = errorCode.message
             )
+        } ?: when (throwable) {
+            is IllegalArgumentException ->
+                ErrorData(
+                    code = ErrorCode.ILLEGAL_ARGUMENT,
+                    message = ErrorCode.ILLEGAL_ARGUMENT.message
+                )
 
-        is IllegalStateException ->
-            ErrorData(
-                ErrorCode.ILLEGAL_STATE,
-                message = ErrorCode.ILLEGAL_STATE.message
-            )
+            is IllegalStateException ->
+                ErrorData(
+                    code = ErrorCode.ILLEGAL_STATE,
+                    message = ErrorCode.ILLEGAL_STATE.message
+                )
 
-        else -> {
-            ErrorData(
-                ErrorCode.UNKNOWN,
-                message = ErrorCode.UNKNOWN.message
-            )
+            else -> {
+                ErrorData(
+                    code = ErrorCode.UNKNOWN,
+                    message = ErrorCode.UNKNOWN.message
+                )
+            }
         }
-    }
 
     suspend fun <T> execute(
         block: suspend () -> Result<T?, ErrorData>
-    ): Response<Any> = withContext(
+    ): ResponseEntity<Response<Any>> = withContext(
         asContextElement(coroutineContext[ReactorContext]?.context?.get<String>(CONTEXT_NAME)!!)
     ) {
         set(kotlin.coroutines.coroutineContext[ReactorContext]?.context?.get<String>(CONTEXT_NAME)!!)
         val result = block()
         clear()
         result.fold(
-            success = { Response(result = ResponseCode.SUCCESS, data = it) },
-            failure = { Response(result = ResponseCode.ERROR, data = it) }
+            success = { ResponseEntity.ok(Response(result = ResponseCode.SUCCESS, data = it)) },
+            failure = { ResponseEntity.badRequest().body(Response(result = ResponseCode.ERROR, data = it)) }
         )
     }
 
@@ -70,7 +77,7 @@ object ServiceOperator {
         validator: suspend () -> Boolean,
         action: suspend () -> T?
     ): Result<T?, ErrorData> = runSuspendCatching {
-        check(validator())
+        require(validator())
         action()
     }.mapError {
         errorHandler(it)

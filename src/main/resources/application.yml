@@ -21,7 +21,10 @@ spring:
 application:
     version: /v1
     prefix: /api
+    route: /mng
     exclude-prefix-path: springdoc
+    role-type: ADMIN
+    site-id: 62a15f4ae4129b518b133127
 
 coroutine:
     io:
@@ -48,3 +51,6 @@ logging:
             spring:
                 cloud: INFO
 
+cloud:
+    aws:
+        jwt-secret-key: 121312313

@@ -105,7 +105,14 @@ style:
     active: false
   WildcardImport:
     active: false
+  MaxLineLength:
+    maxLineLength: 150
 
 formatting:
   NoWildcardImports:
     active: false
+  ImportOrdering:
+    active: false
+  MaximumLineLength:
+    active: true
+    maxLineLength: 150
