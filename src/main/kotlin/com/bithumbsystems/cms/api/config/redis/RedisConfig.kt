@@ -1,8 +1,9 @@
 package com.bithumbsystems.cms.api.config.redis
 
+import com.bithumbsystems.cms.api.config.aws.ParameterStoreConfig
+import com.bithumbsystems.cms.api.config.client.ClientBuilder
 import com.bithumbsystems.cms.api.util.PortCheckUtil.findAvailablePort
 import com.bithumbsystems.cms.api.util.PortCheckUtil.isRunning
-import org.redisson.Redisson
 import org.redisson.api.RedissonReactiveClient
 import org.redisson.config.Config
 import org.springframework.context.annotation.Bean
@@ -14,15 +15,19 @@ import javax.annotation.PreDestroy
 
 @Configuration
 class RedisConfig(
-    private val redisProperties: RedisProperties
+    val parameterStoreConfig: ParameterStoreConfig,
+    val clientBuilder: ClientBuilder
 ) {
 
     private var redisServer: RedisServer? = null
+    private val config = Config()
 
     @PostConstruct
     @Throws(IOException::class)
     fun redisServer() {
-        val redisPort = if (isRunning(redisProperties.port)) findAvailablePort() else redisProperties.port
+        val redisPort =
+            if (isRunning(parameterStoreConfig.redisProperties.port)) findAvailablePort()
+            else parameterStoreConfig.redisProperties.port
 
         redisServer = RedisServer.builder()
             .port(redisPort)
@@ -30,8 +35,10 @@ class RedisConfig(
             .build()
         redisServer?.start()
 
-        val config = Config()
-        config.useSingleServer().address = "redis://${redisProperties.host}:$redisPort"
+        config.useSingleServer().address = "redis://${parameterStoreConfig.redisProperties.host}:$redisPort"
+        if (!parameterStoreConfig.redisProperties.token.isNullOrEmpty()) {
+            config.useSingleServer().password = parameterStoreConfig.redisProperties.token
+        }
     }
 
     @PreDestroy
@@ -40,6 +47,5 @@ class RedisConfig(
     }
 
     @Bean
-    fun redissonReactiveClient(): RedissonReactiveClient =
-        Redisson.create().reactive()
+    fun redissonReactiveClient(): RedissonReactiveClient = clientBuilder.buildRedis(config)
 }

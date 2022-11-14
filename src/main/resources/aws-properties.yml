@@ -1,0 +1,15 @@
+cloud:
+    aws:
+        credentials:
+            profile-name: ${aws.default.profile:dev}
+        stack:
+            auto: ${aws.stack.auto:false}
+        s3:
+            bucket: ${aws.s3.bucket:cms-dev-bucket}
+        region:
+            static: ${aws.region:ap-northeast-2}
+            auto: ${aws.region.auto:false}
+        ssm:
+            endpoint: https://ssm.ap-northeast-2.amazonaws.com
+        kms:
+            endpoint: https://kms.ap-northeast-2.amazonaws.com

@@ -1,7 +1,11 @@
 package com.bithumbsystems.cms.api.config.mongo
 
+import com.bithumbsystems.cms.api.config.aws.ParameterStoreConfig
+import com.bithumbsystems.cms.api.config.client.ClientBuilder
+import com.mongodb.ConnectionString
+import com.mongodb.MongoClientSettings
+import com.mongodb.connection.netty.NettyStreamFactoryFactory
 import com.mongodb.reactivestreams.client.MongoClient
-import com.mongodb.reactivestreams.client.MongoClients
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
@@ -23,17 +27,41 @@ import org.springframework.transaction.reactive.TransactionalOperator
 @Configuration
 @EnableReactiveMongoRepositories("com.bithumbsystems.cms.persistence.mongo")
 @EnableTransactionManagement
+class MongoConfig(
+    val parameterStoreConfig: ParameterStoreConfig,
+    val clientBuilder: ClientBuilder
+) : AbstractReactiveMongoConfiguration() {
 class MongoConfig : AbstractReactiveMongoConfiguration() {
 
-    override fun getDatabaseName() = "test"
+    override fun getDatabaseName() = parameterStoreConfig.mongoProperties.mongodbName
 
     override fun reactiveMongoClient(): MongoClient = mongoClient()
+
+    @Bean
+    fun mongoClient(): MongoClient = clientBuilder.buildMongo(configureClientSettings())
 
     @Bean
     override fun reactiveMongoTemplate(
         databaseFactory: ReactiveMongoDatabaseFactory,
         mongoConverter: MappingMongoConverter
     ): ReactiveMongoTemplate = ReactiveMongoTemplate(mongoClient(), databaseName)
+
+    protected fun configureClientSettings(): MongoClientSettings =
+        MongoClientSettings.builder()
+            .streamFactoryFactory(NettyStreamFactoryFactory.builder().build())
+            .applyConnectionString(getConnectionString(parameterStoreConfig.mongoProperties))
+            .build()
+
+    private fun getConnectionString(mongoProperties: MongoProperties): ConnectionString =
+        ConnectionString(
+            String.format(
+                "mongodb://%s:%s@%s:%s",
+                mongoProperties.mongodbUser,
+                mongoProperties.mongodbPassword,
+                mongoProperties.mongodbUrl,
+                mongoProperties.mongodbPort
+            )
+        )
 
     @Bean
     @Primary
@@ -50,9 +78,6 @@ class MongoConfig : AbstractReactiveMongoConfiguration() {
         converter.setTypeMapper(DefaultMongoTypeMapper(null))
         return converter
     }
-
-    @Bean
-    fun mongoClient(): MongoClient = MongoClients.create()
 
     @Bean
     fun transactionManager(factory: ReactiveMongoDatabaseFactory?): ReactiveMongoTransactionManager? {
