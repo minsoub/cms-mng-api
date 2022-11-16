@@ -71,8 +71,8 @@ dependencies {
     implementation("software.amazon.awssdk:s3:$awssdkVersion")
 
     implementation("io.awspring.cloud:spring-cloud-starter-aws:2.4.1")
+    implementation("io.awspring.cloud:spring-cloud-starter-aws-messaging:2.4.1")
     implementation("io.awspring.cloud:spring-cloud-starter-aws-parameter-store-config:2.4.1")
-
     // test
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")

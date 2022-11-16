@@ -1,5 +1,8 @@
 package com.bithumbsystems.cms.api.config.client.impl
 
+import com.amazonaws.client.builder.AwsClientBuilder
+import com.amazonaws.services.sqs.AmazonSQSAsync
+import com.amazonaws.services.sqs.AmazonSQSAsyncClientBuilder
 import com.bithumbsystems.cms.api.config.aws.AwsProperties
 import com.bithumbsystems.cms.api.config.client.ClientBuilder
 import com.mongodb.MongoClientSettings
@@ -41,4 +44,17 @@ class LocalClientBuilderImpl : ClientBuilder {
     override fun buildMongo(mongoClientSettings: MongoClientSettings): MongoClient = MongoClients.create()
 
     override fun buildRedis(config: Config): RedissonReactiveClient = Redisson.create().reactive()
+
+    override fun buildSqs(awsProperties: AwsProperties): AmazonSQSAsync {
+        val endpointConfig = AwsClientBuilder.EndpointConfiguration(
+            awsProperties.sqsEndPoint,
+            awsProperties.region
+        )
+        val provider = com.amazonaws.auth.profile.ProfileCredentialsProvider(awsProperties.profileName)
+
+        return AmazonSQSAsyncClientBuilder.standard()
+            .withCredentials(provider)
+            .withEndpointConfiguration(endpointConfig)
+            .build()
+    }
 }

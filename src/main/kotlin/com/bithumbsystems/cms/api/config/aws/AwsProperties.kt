@@ -11,7 +11,9 @@ class AwsProperties(
     @Value("\${cloud.aws.s3.bucket}") val bucket: String,
     @Value("\${cloud.aws.region.static}") val region: String,
     @Value("\${cloud.aws.ssm.endpoint}") val ssmEndPoint: String,
-    @Value("\${cloud.aws.kms.endpoint}") val kmsEndPoint: String
+    @Value("\${cloud.aws.kms.endpoint}") val kmsEndPoint: String,
+    @Value("\${cloud.aws.sqs.endpoint}") val sqsEndPoint: String,
+    @Value("\${cloud.aws.sqs.program.queue-name}") val sqsProgramQueueName: String
 ) {
     lateinit var kmsKey: String
     lateinit var saltKey: String
