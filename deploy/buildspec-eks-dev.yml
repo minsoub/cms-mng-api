@@ -50,7 +50,7 @@ phases:
             - ./gradlew assemble
             - echo Build started on `date`
             - echo Building the Docker image ...
-            - docker build -f docker/Dockerfile -t $REPOSITORY_URI:latest --build-arg JAR_FILE=$JAR_FILE_NAME --build-arg PROFILES=${SPRING_PROFILE} --build-arg AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID --build-arg AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY --build-arg AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN .
+            - docker build -f ./Dockerfile -t $REPOSITORY_URI:latest --build-arg JAR_FILE=$JAR_FILE_NAME --build-arg PROFILES=${SPRING_PROFILE} --build-arg AWS_ACCESS_KEY_ID=$AWS_ACCESS_KEY_ID --build-arg AWS_SECRET_ACCESS_KEY=$AWS_SECRET_ACCESS_KEY --build-arg AWS_SESSION_TOKEN=$AWS_SESSION_TOKEN .
             - echo Build completed on `date`
     post_build:
         commands:
