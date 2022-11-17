@@ -1,0 +1,15 @@
+apiVersion: v1
+kind: Service
+metadata:
+    namespace: NAMESPACE
+    name: cms-mng-api-nlb
+    annotations:
+        service.beta.kubernetes.io/aws-load-balancer-type: nlb-ip
+spec:
+    ports:
+        - port: 80
+          targetPort: 8080
+          protocol: TCP
+    type: LoadBalancer
+    selector:
+        app: cms-mng-api

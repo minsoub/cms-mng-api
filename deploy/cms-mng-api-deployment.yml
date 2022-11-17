@@ -1,0 +1,74 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+    name: cms-mng-api
+    namespace: NAMESPACE
+    labels:
+        app: cms-mng-api
+spec:
+    replicas: 1
+    selector:
+        matchLabels:
+            app: cms-mng-api
+    strategy: {}
+    template:
+        metadata:
+            labels:
+                app: cms-mng-api
+        spec:
+            serviceAccount: fluentd
+            serviceAccountName: fluentd
+            initContainers:
+                - name: config-fluentd
+                  image: busybox
+                  imagePullPolicy: Always
+                  command: ["/bin/sh", "-c"]
+                  args:
+                      -
+                          cp /etc2/fluentd-config/kubernetes.conf /fluentd/etc/kubernetes.conf;
+                          cp /etc2/fluentd-config/fluent.conf /fluentd/etc/fluent.conf;
+                  volumeMounts:
+                      - name: config-source
+                        mountPath: /etc2/fluentd-config
+                      - name: config-path
+                        mountPath: /fluentd/etc
+            containers:
+                - name: cms-mng-api
+                  image: AWS_ECR_URI
+                  ports:
+                      - containerPort: 8080
+                  resources: {}
+                  volumeMounts:
+                      - name: applog
+                        mountPath: /app/logs
+                - name: fluentd-agent
+                  image: fluent/fluentd-kubernetes-daemonset:v1.7.1-debian-elasticsearch7-1.1
+                  env:
+                      - name: FLUENT_ELASTICSEARCH_HOST
+                        value: "elasticsearch-node.systems-dev-ns.svc.cluster.local"
+                      - name: FLUENT_ELASTICSEARCH_PORT
+                        value: "9200"
+                      - name: FLUENT_ELASTICSEARCH_SCHEME
+                        value: "http"
+                      - name: FLUENT_UID
+                        value: "0"
+                  resources:
+                      limits:
+                          memory: 200Mi
+                      requests:
+                          cpu: 100m
+                          memory: 200Mi
+                  volumeMounts:
+                      - name: applog
+                        mountPath: /app/logs
+                      - name: config-path
+                        mountPath: /fluentd/etc
+            volumes:
+                - name: applog
+                  hostPath:
+                      path: /app/logs
+                - name: config-path
+                  emptyDir: {}
+                - name: config-source
+                  configMap:
+                      name: fluentd-config
