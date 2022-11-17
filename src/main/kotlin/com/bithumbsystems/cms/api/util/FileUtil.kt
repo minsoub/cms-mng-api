@@ -13,8 +13,6 @@ import software.amazon.awssdk.services.s3.model.GetObjectResponse
 import software.amazon.awssdk.services.s3.model.PutObjectRequest
 import java.util.*
 
-class FileUtil
-
 suspend fun FilePart.upload(s3AsyncClient: S3AsyncClient, bucket: String): String {
     val fileKey = UUID.randomUUID().toString()
     val objectRequest = PutObjectRequest.builder()
