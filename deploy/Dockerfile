@@ -10,7 +10,7 @@ ENV SET_PROFILE="$PROFILES"
 RUN mkdir /app
 WORKDIR /app
 COPY ${JAR_FILE} cms-mng-api.jar
-COPY entrypoint.sh entrypoint.sh
+COPY deploy/entrypoint.sh entrypoint.sh
 RUN chmod 755 entrypoint.sh
 RUN mkdir /app/logs
 RUN touch /app/logs/cms-mng-api.log
