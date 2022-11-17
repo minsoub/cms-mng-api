@@ -93,6 +93,17 @@ object ServiceOperator {
 
     suspend fun <T> executeIn(
         dispatcher: CoroutineDispatcher,
+        action: suspend () -> T?
+    ): Result<T?, ErrorData> = runSuspendCatching {
+        withContext(dispatcher) {
+            action()
+        }
+    }.mapError {
+        errorHandler(it)
+    }
+
+    suspend fun <T> executeIn(
+        dispatcher: CoroutineDispatcher,
         action: suspend () -> T?,
         fallback: suspend () -> T?,
         afterJob: suspend (T) -> Unit

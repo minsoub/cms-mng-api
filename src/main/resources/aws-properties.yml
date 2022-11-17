@@ -5,7 +5,7 @@ cloud:
         stack:
             auto: ${aws.stack.auto:false}
         s3:
-            bucket: ${aws.s3.bucket:cms-dev-bucket}
+            bucket: ${aws.s3.bucket:cms-dev-s3-bucket}
         region:
             static: ${aws.region:ap-northeast-2}
             auto: ${aws.region.auto:false}

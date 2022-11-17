@@ -11,6 +11,7 @@ import com.mongodb.reactivestreams.client.MongoClients
 import org.redisson.Redisson
 import org.redisson.api.RedissonReactiveClient
 import org.redisson.config.Config
+import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Profile
 import org.springframework.stereotype.Component
 import software.amazon.awssdk.regions.Region
@@ -26,6 +27,7 @@ class ClientBuilderImpl : ClientBuilder {
         SsmClient.builder().endpointOverride(URI.create(awsProperties.ssmEndPoint))
             .region(Region.of(awsProperties.region)).build()
 
+    @Bean
     override fun buildS3(awsProperties: AwsProperties): S3AsyncClient =
         S3AsyncClient.builder().region(Region.of(awsProperties.region)).build()
 

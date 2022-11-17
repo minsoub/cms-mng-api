@@ -17,7 +17,7 @@ class ParameterStoreConfig(
     @Value("\${spring.profiles.active}") profile: String
 ) {
     private val ssmClient = clientBuilder.buildSsm(awsProperties)
-    private val isLocalOrDefault = profile == "local" || profile == "default"
+    private val isLocalOrDefault = profile == "local" || profile == "default" || profile == "test"
     private val profileName = if (isLocalOrDefault) profile else awsProperties.profileName
 
     val mongoProperties = if (isLocalOrDefault) localMongoProperties else MongoProperties(

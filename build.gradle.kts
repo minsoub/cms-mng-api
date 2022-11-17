@@ -69,6 +69,7 @@ dependencies {
     implementation("software.amazon.awssdk:kms:$awssdkVersion")
     implementation("software.amazon.awssdk:ssm:$awssdkVersion")
     implementation("software.amazon.awssdk:s3:$awssdkVersion")
+    implementation("software.amazon.awssdk:netty-nio-client:$awssdkVersion")
 
     implementation("io.awspring.cloud:spring-cloud-starter-aws:2.4.1")
     implementation("io.awspring.cloud:spring-cloud-starter-aws-messaging:2.4.1")
