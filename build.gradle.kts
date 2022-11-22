@@ -7,7 +7,6 @@ plugins {
     id("org.jlleitschuh.gradle.ktlint") version "11.0.0"
     id("io.gitlab.arturbosch.detekt") version "1.21.0"
     id("org.jetbrains.kotlinx.kover") version "0.6.1"
-
     kotlin("jvm") version "1.6.21"
     kotlin("plugin.spring") version "1.6.21"
     kotlin("kapt") version "1.6.21"
@@ -94,7 +93,7 @@ detekt {
 tasks {
     getByName<org.springframework.boot.gradle.tasks.bundling.BootJar>("bootJar") {
         enabled = true
-        mainClass.set("com.bithumbsystems.cms.CmsMngApiApplication")
+        mainClass.set("com.bithumbsystems.cms.CmsMngApiApplicationKt")
     }
 
     jar {
