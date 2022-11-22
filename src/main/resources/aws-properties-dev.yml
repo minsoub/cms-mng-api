@@ -1,7 +1,7 @@
 cloud:
     aws:
         credentials:
-            profile-name: ${aws.default.profile:eks-dev}
+            profile-name: ${aws.default.profile:dev}
             instanceProfile: true
         stack:
             auto: ${auth.aws.stack.auto:false}
