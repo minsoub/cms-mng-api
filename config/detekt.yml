@@ -46,7 +46,7 @@ complexity:
   LongParameterList:
     active: true
     functionThreshold: 5
-    constructorThreshold: 20
+    constructorThreshold: 40
     ignoreDefaultParameters: false
     ignoreDataClasses: true
   NestedBlockDepth:
