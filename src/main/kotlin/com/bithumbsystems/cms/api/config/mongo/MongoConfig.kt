@@ -14,6 +14,7 @@ import org.springframework.data.mongodb.ReactiveMongoDatabaseFactory
 import org.springframework.data.mongodb.ReactiveMongoTransactionManager
 import org.springframework.data.mongodb.config.AbstractReactiveMongoConfiguration
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate
+import org.springframework.data.mongodb.core.SimpleReactiveMongoDatabaseFactory
 import org.springframework.data.mongodb.core.convert.DefaultMongoTypeMapper
 import org.springframework.data.mongodb.core.convert.MappingMongoConverter
 import org.springframework.data.mongodb.core.convert.MongoCustomConversions
@@ -40,10 +41,15 @@ class MongoConfig(
     fun mongoClient(): MongoClient = clientBuilder.buildMongo(configureClientSettings())
 
     @Bean
+    override fun reactiveMongoDbFactory(): ReactiveMongoDatabaseFactory {
+        return SimpleReactiveMongoDatabaseFactory(reactiveMongoClient(), databaseName)
+    }
+
+    @Bean
     override fun reactiveMongoTemplate(
         databaseFactory: ReactiveMongoDatabaseFactory,
         mongoConverter: MappingMongoConverter
-    ): ReactiveMongoTemplate = ReactiveMongoTemplate(mongoClient(), databaseName)
+    ): ReactiveMongoTemplate = ReactiveMongoTemplate(databaseFactory, mongoConverter)
 
     private fun configureClientSettings(): MongoClientSettings =
         MongoClientSettings.builder()
@@ -53,7 +59,7 @@ class MongoConfig(
 
     private fun getConnectionString(mongoProperties: MongoProperties): ConnectionString =
         ConnectionString(
-            "mongodb://${mongoProperties.mongodbUser}:${mongoProperties.mongodbPassword}@${mongoProperties.mongodbUrl}:${mongoProperties.mongodbPort}"
+            "mongodb://${mongoProperties.mongodbUser}:${mongoProperties.mongodbPassword}@${mongoProperties.mongodbUri}:${mongoProperties.mongodbPort}"
         )
 
     @Bean
