@@ -4,7 +4,6 @@ import com.amazonaws.client.builder.AwsClientBuilder
 import com.amazonaws.services.sqs.AmazonSQSAsync
 import com.amazonaws.services.sqs.AmazonSQSAsyncClientBuilder
 import com.bithumbsystems.cms.api.config.aws.AwsProperties
-import com.bithumbsystems.cms.api.config.aws.ParameterStoreConfig
 import com.bithumbsystems.cms.api.config.client.ClientBuilder
 import com.mongodb.MongoClientSettings
 import com.mongodb.reactivestreams.client.MongoClient
@@ -60,18 +59,5 @@ class LocalClientBuilderImpl : ClientBuilder {
             .withCredentials(provider)
             .withEndpointConfiguration(endpointConfig)
             .build()
-    }
-
-    @Bean
-    fun redissonReactiveClient(parameterStoreConfig: ParameterStoreConfig): RedissonReactiveClient {
-        val config = Config()
-        val redisHost = parameterStoreConfig.redisProperties.host
-        val redisPort = parameterStoreConfig.redisProperties.port
-        config.useClusterServers().nodeAddresses = listOf("rediss://$redisHost:$redisPort")
-        parameterStoreConfig.redisProperties.token?.let {
-            config.useClusterServers().password = it
-        }
-
-        return Redisson.create(config).reactive()
     }
 }
