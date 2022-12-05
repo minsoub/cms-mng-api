@@ -88,4 +88,3 @@ cloud:
             endpoint: https://sqs.ap-northeast-2.amazonaws.com
             program:
                 queue-name: program_queue_local.fifo
-
