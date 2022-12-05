@@ -4,7 +4,7 @@ import com.bithumbsystems.cms.api.config.operator.ServiceOperator.errorHandler
 import com.bithumbsystems.cms.api.model.enums.ErrorCode
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.mono
-import org.springframework.boot.configurationprocessor.json.JSONArray
+import com.nimbusds.jose.shaded.json.JSONArray
 import org.springframework.core.MethodParameter
 import org.springframework.security.oauth2.jwt.ReactiveJwtDecoder
 import org.springframework.stereotype.Component
@@ -59,8 +59,8 @@ class CustomArgumentResolver(
             if (accountId.isNullOrEmpty() || roles == null || email.isNullOrEmpty()) {
                 errorHandler(IllegalStateException(ErrorCode.INVALID_TOKEN.message), ErrorCode.INVALID_TOKEN)
             } else {
-                val accountRole = (0 until roles.length() step 1).map {
-                    roles.getString(it)
+                val accountRole = (0 until roles.size step 1).map {
+                    roles[it].toString()
                 }.toSet()
                 Account(accountId = accountId, roles = accountRole, email = email, userIp = userIp, mySiteId = mySiteId)
             }
