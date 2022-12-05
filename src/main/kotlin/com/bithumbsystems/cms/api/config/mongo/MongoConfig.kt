@@ -60,8 +60,7 @@ class MongoConfig(
     private fun getConnectionString(mongoProperties: MongoProperties): ConnectionString =
         ConnectionString(
             "mongodb://${mongoProperties.mongodbUser}:${mongoProperties.mongodbPassword}" +
-                "@${mongoProperties.mongodbUri}:${mongoProperties.mongodbPort}?" +
-                "authSource=${mongoProperties.mongodbName}"
+                "@${mongoProperties.mongodbUri}:${mongoProperties.mongodbPort}"
         )
 
     @Bean
