@@ -22,7 +22,7 @@ import software.amazon.awssdk.services.ssm.SsmClient
 import java.net.URI
 
 @Component
-@Profile(value = ["dev", "qa", "prod", "eks-dev"])
+@Profile(value = ["dev", "qa", "prod", "eks-dev", "eks-prod"])
 class ClientBuilderImpl : ClientBuilder {
     override fun buildSsm(awsProperties: AwsProperties): SsmClient =
         SsmClient.builder().endpointOverride(URI.create(awsProperties.ssmEndPoint))
