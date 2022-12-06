@@ -26,8 +26,7 @@ import org.springframework.transaction.reactive.TransactionalOperator
 @EnableReactiveMongoRepositories("com.bithumbsystems.cms.persistence.mongo")
 @EnableTransactionManagement
 class MongoConfig(
-    val parameterStoreConfig: ParameterStoreConfig,
-    val mongoProperties: MongoProperties
+    val parameterStoreConfig: ParameterStoreConfig
 ) : AbstractReactiveMongoConfiguration() {
 
     private val logger by Logger()
@@ -36,7 +35,7 @@ class MongoConfig(
 
     @Bean
     override fun reactiveMongoDbFactory(): ReactiveMongoDatabaseFactory {
-        return SimpleReactiveMongoDatabaseFactory(getConnectionString(mongoProperties))
+        return SimpleReactiveMongoDatabaseFactory(getConnectionString(parameterStoreConfig.mongoProperties))
     }
 
     @Bean
@@ -48,11 +47,11 @@ class MongoConfig(
     private fun getConnectionString(mongoProperties: MongoProperties): ConnectionString {
         logger.info(
             "mongodb://${mongoProperties.mongodbUser}:${mongoProperties.mongodbPassword}" +
-                "@${mongoProperties.mongodbUri}:${mongoProperties.mongodbPort}/$databaseName?authSource=$databaseName&mechanism=DEFAULT"
+                "@${mongoProperties.mongodbUri}:${mongoProperties.mongodbPort}/$databaseName?authSource=$databaseName"
         )
         return ConnectionString(
             "mongodb://${mongoProperties.mongodbUser}:${mongoProperties.mongodbPassword}" +
-                "@${mongoProperties.mongodbUri}:${mongoProperties.mongodbPort}/$databaseName?authSource=$databaseName&mechanism=DEFAULT"
+                "@${mongoProperties.mongodbUri}:${mongoProperties.mongodbPort}/$databaseName?authSource=$databaseName"
         )
     }
 
