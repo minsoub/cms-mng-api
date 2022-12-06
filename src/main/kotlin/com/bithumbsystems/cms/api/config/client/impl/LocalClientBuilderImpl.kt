@@ -5,9 +5,6 @@ import com.amazonaws.services.sqs.AmazonSQSAsync
 import com.amazonaws.services.sqs.AmazonSQSAsyncClientBuilder
 import com.bithumbsystems.cms.api.config.aws.AwsProperties
 import com.bithumbsystems.cms.api.config.client.ClientBuilder
-import com.mongodb.MongoClientSettings
-import com.mongodb.reactivestreams.client.MongoClient
-import com.mongodb.reactivestreams.client.MongoClients
 import org.redisson.Redisson
 import org.redisson.api.RedissonReactiveClient
 import org.redisson.config.Config
@@ -43,8 +40,6 @@ class LocalClientBuilderImpl : ClientBuilder {
             .endpointOverride(URI.create(awsProperties.kmsEndPoint))
             .credentialsProvider(ProfileCredentialsProvider.create(awsProperties.profileName))
             .build()
-
-    override fun buildMongo(mongoClientSettings: MongoClientSettings): MongoClient = MongoClients.create()
 
     override fun buildRedis(config: Config): RedissonReactiveClient = Redisson.create().reactive()
 
