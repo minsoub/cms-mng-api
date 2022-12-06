@@ -1,6 +1,7 @@
 package com.bithumbsystems.cms.api.config.mongo
 
 import com.bithumbsystems.cms.api.config.aws.ParameterStoreConfig
+import com.bithumbsystems.cms.api.util.Logger
 import com.mongodb.ConnectionString
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -29,6 +30,8 @@ class MongoConfig(
     val mongoProperties: MongoProperties
 ) : AbstractReactiveMongoConfiguration() {
 
+    private val logger by Logger()
+
     override fun getDatabaseName() = parameterStoreConfig.mongoProperties.mongodbName
 
     @Bean
@@ -42,11 +45,16 @@ class MongoConfig(
         mongoConverter: MappingMongoConverter
     ): ReactiveMongoTemplate = ReactiveMongoTemplate(databaseFactory, mongoConverter)
 
-    private fun getConnectionString(mongoProperties: MongoProperties): ConnectionString =
-        ConnectionString(
+    private fun getConnectionString(mongoProperties: MongoProperties): ConnectionString {
+        logger.info(
             "mongodb://${mongoProperties.mongodbUser}:${mongoProperties.mongodbPassword}" +
                 "@${mongoProperties.mongodbUri}:${mongoProperties.mongodbPort}/$databaseName?authSource=$databaseName&mechanism=DEFAULT"
         )
+        return ConnectionString(
+            "mongodb://${mongoProperties.mongodbUser}:${mongoProperties.mongodbPassword}" +
+                "@${mongoProperties.mongodbUri}:${mongoProperties.mongodbPort}/$databaseName?authSource=$databaseName&mechanism=DEFAULT"
+        )
+    }
 
     @Bean
     @Primary
