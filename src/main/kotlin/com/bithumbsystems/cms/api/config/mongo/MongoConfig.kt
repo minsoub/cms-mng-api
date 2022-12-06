@@ -45,7 +45,7 @@ class MongoConfig(
     private fun getConnectionString(mongoProperties: MongoProperties): ConnectionString =
         ConnectionString(
             "mongodb://${mongoProperties.mongodbUser}:${mongoProperties.mongodbPassword}" +
-                "@${mongoProperties.mongodbUri}:${mongoProperties.mongodbPort}/$databaseName?authSource=$databaseName?"
+                "@${mongoProperties.mongodbUri}:${mongoProperties.mongodbPort}/authSource=$databaseName?"
         )
 
     @Bean
@@ -65,12 +65,12 @@ class MongoConfig(
     }
 
     @Bean
-    fun transactionManager(factory: ReactiveMongoDatabaseFactory?): ReactiveMongoTransactionManager? {
-        return ReactiveMongoTransactionManager(factory!!)
+    fun transactionManager(factory: ReactiveMongoDatabaseFactory): ReactiveMongoTransactionManager {
+        return ReactiveMongoTransactionManager(factory)
     }
 
     @Bean
-    fun transactionOperator(manager: ReactiveTransactionManager?): TransactionalOperator? {
-        return TransactionalOperator.create(manager!!)
+    fun transactionOperator(manager: ReactiveTransactionManager): TransactionalOperator {
+        return TransactionalOperator.create(manager)
     }
 }
