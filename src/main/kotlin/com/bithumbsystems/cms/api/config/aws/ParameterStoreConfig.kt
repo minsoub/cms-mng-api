@@ -3,6 +3,7 @@ package com.bithumbsystems.cms.api.config.aws
 import com.bithumbsystems.cms.api.config.client.ClientBuilder
 import com.bithumbsystems.cms.api.config.mongo.MongoProperties
 import com.bithumbsystems.cms.api.config.redis.RedisProperties
+import com.bithumbsystems.cms.api.util.Logger
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
 import software.amazon.awssdk.services.ssm.model.GetParameterRequest
@@ -16,6 +17,8 @@ class ParameterStoreConfig(
     localRedisProperties: RedisProperties,
     @Value("\${spring.profiles.active}") profile: String
 ) {
+    private val logger by Logger()
+
     private val ssmClient = clientBuilder.buildSsm(awsProperties)
     private val isLocalOrDefault = profile == "local" || profile == "default" || profile == "test"
     private val profileName = if (isLocalOrDefault) "local" else awsProperties.profileName
@@ -103,7 +106,10 @@ class ParameterStoreConfig(
         prefix: String,
         storeName: String,
         type: String
-    ): String = ssmClient.getParameter(
-        GetParameterRequest.builder().name("$prefix/${storeName}_$profileName/$type").withDecryption(true).build()
-    ).parameter().value()
+    ): String {
+        logger.info("getParameter: $prefix/${storeName}_$profileName/$type")
+        return ssmClient.getParameter(
+            GetParameterRequest.builder().name("$prefix/${storeName}_$profileName/$type").withDecryption(true).build()
+        ).parameter().value()
+    }
 }
