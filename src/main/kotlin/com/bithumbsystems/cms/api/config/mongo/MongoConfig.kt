@@ -6,6 +6,8 @@ import com.mongodb.ConnectionString
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.context.annotation.Primary
+import org.springframework.core.Ordered
+import org.springframework.core.annotation.Order
 import org.springframework.data.mapping.model.SnakeCaseFieldNamingStrategy
 import org.springframework.data.mongodb.ReactiveMongoDatabaseFactory
 import org.springframework.data.mongodb.ReactiveMongoTransactionManager
@@ -25,6 +27,7 @@ import org.springframework.transaction.reactive.TransactionalOperator
 @Configuration
 @EnableReactiveMongoRepositories("com.bithumbsystems.cms.persistence.mongo")
 @EnableTransactionManagement
+@Order(Ordered.LOWEST_PRECEDENCE)
 class MongoConfig(
     val parameterStoreConfig: ParameterStoreConfig
 ) : AbstractReactiveMongoConfiguration() {
