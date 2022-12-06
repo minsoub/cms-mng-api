@@ -17,6 +17,7 @@ spring:
             username: cms-systems
             database: smartcmslocaldb
             password:
+            authentication-database: smartcmslocaldb
     redis:
         host: localhost
         port: 6379
