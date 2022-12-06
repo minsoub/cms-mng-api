@@ -6,9 +6,11 @@ import com.bithumbsystems.cms.api.config.redis.RedisProperties
 import com.bithumbsystems.cms.api.util.Logger
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Configuration
+import org.springframework.context.annotation.Primary
 import software.amazon.awssdk.services.ssm.model.GetParameterRequest
 
 @Configuration
+@Primary
 class ParameterStoreConfig(
     awsProperties: AwsProperties,
     parameterStoreProperties: ParameterStoreProperties,
@@ -22,54 +24,56 @@ class ParameterStoreConfig(
     private val ssmClient = clientBuilder.buildSsm(awsProperties)
     private val isLocalOrDefault = profile == "local" || profile == "default" || profile == "test"
     private val profileName = if (isLocalOrDefault) "local" else awsProperties.profileName
-
-    val mongoProperties = if (isLocalOrDefault) localMongoProperties else MongoProperties(
-        getParameterValue(
-            parameterStoreProperties.prefix,
-            parameterStoreProperties.docName,
-            ParameterStoreCode.DB_URL.value
-        ),
-        getParameterValue(
-            parameterStoreProperties.prefix,
-            parameterStoreProperties.docName,
-            ParameterStoreCode.DB_USER.value
-        ),
-        getParameterValue(
-            parameterStoreProperties.prefix,
-            parameterStoreProperties.docName,
-            ParameterStoreCode.DB_PASSWORD.value
-        ),
-        getParameterValue(
-            parameterStoreProperties.prefix,
-            parameterStoreProperties.docName,
-            ParameterStoreCode.DB_PORT.value
-        ),
-        getParameterValue(
-            parameterStoreProperties.prefix,
-            parameterStoreProperties.docName,
-            ParameterStoreCode.DB_NAME.value
-        )
-    )
-
-    val redisProperties = if (isLocalOrDefault) localRedisProperties else RedisProperties(
-        getParameterValue(
-            parameterStoreProperties.prefix,
-            parameterStoreProperties.redisName,
-            ParameterStoreCode.REDIS_HOST.value
-        ),
-        getParameterValue(
-            parameterStoreProperties.prefix,
-            parameterStoreProperties.redisName,
-            ParameterStoreCode.REDIS_PORT.value
-        ).toInt(),
-        getParameterValue(
-            parameterStoreProperties.prefix,
-            parameterStoreProperties.redisName,
-            ParameterStoreCode.REDIS_TOKEN.value
-        )
-    )
+    lateinit var mongoProperties: MongoProperties
+    lateinit var redisProperties: RedisProperties
 
     init {
+        mongoProperties = if (isLocalOrDefault) localMongoProperties else MongoProperties(
+            getParameterValue(
+                parameterStoreProperties.prefix,
+                parameterStoreProperties.docName,
+                ParameterStoreCode.DB_URL.value
+            ),
+            getParameterValue(
+                parameterStoreProperties.prefix,
+                parameterStoreProperties.docName,
+                ParameterStoreCode.DB_USER.value
+            ),
+            getParameterValue(
+                parameterStoreProperties.prefix,
+                parameterStoreProperties.docName,
+                ParameterStoreCode.DB_PASSWORD.value
+            ),
+            getParameterValue(
+                parameterStoreProperties.prefix,
+                parameterStoreProperties.docName,
+                ParameterStoreCode.DB_PORT.value
+            ),
+            getParameterValue(
+                parameterStoreProperties.prefix,
+                parameterStoreProperties.docName,
+                ParameterStoreCode.DB_NAME.value
+            )
+        )
+
+        redisProperties = if (isLocalOrDefault) localRedisProperties else RedisProperties(
+            getParameterValue(
+                parameterStoreProperties.prefix,
+                parameterStoreProperties.redisName,
+                ParameterStoreCode.REDIS_HOST.value
+            ),
+            getParameterValue(
+                parameterStoreProperties.prefix,
+                parameterStoreProperties.redisName,
+                ParameterStoreCode.REDIS_PORT.value
+            ).toInt(),
+            getParameterValue(
+                parameterStoreProperties.prefix,
+                parameterStoreProperties.redisName,
+                ParameterStoreCode.REDIS_TOKEN.value
+            )
+        )
+
         awsProperties.kmsKey =
             getParameterValue(
                 parameterStoreProperties.smartPrefix,
