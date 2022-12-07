@@ -14,7 +14,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 class CmsNoticeCategoryRepositoryImpl(
-    private val reactiveMongoTemplate: ReactiveMongoTemplate,
+    private val reactiveMongoTemplate: ReactiveMongoTemplate
 ) : CmsCustomRepository<CmsNoticeCategory> {
     override suspend fun countAllByCriteria(criteria: Criteria): Long =
         reactiveMongoTemplate.count(Query.query(criteria), CmsNoticeCategory::class.java).awaitSingle()

@@ -5,15 +5,14 @@ import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.model.request.NoticeCategoryRequest
 import com.bithumbsystems.cms.api.model.request.SearchParams
 import com.bithumbsystems.cms.api.model.request.toEntity
-import com.bithumbsystems.cms.api.model.response.NoticeCategoryResponse
-import com.bithumbsystems.cms.api.model.response.PageResponse
-import com.bithumbsystems.cms.api.model.response.toMaskingResponse
-import com.bithumbsystems.cms.api.model.response.toResponse
+import com.bithumbsystems.cms.api.model.response.*
 import com.bithumbsystems.cms.api.util.QueryUtil.buildCriteria
 import com.bithumbsystems.cms.api.util.QueryUtil.buildSort
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsNoticeCategory
+import com.bithumbsystems.cms.persistence.mongo.entity.setUpdateInfo
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsCustomRepository
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsNoticeCategoryRepository
+import com.github.michaelbull.result.Result
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -28,7 +27,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class NoticeCategoryService(
     private val noticeCategoryRepository: CmsNoticeCategoryRepository,
-    private val noticeCustomRepository: CmsCustomRepository<CmsNoticeCategory>,
+    private val noticeCustomRepository: CmsCustomRepository<CmsNoticeCategory>
 ) {
 
     /**
@@ -37,7 +36,7 @@ class NoticeCategoryService(
      * @param account 요청자 계정 정보
      */
     @Transactional
-    suspend fun createCategory(request: NoticeCategoryRequest, account: Account) = executeIn {
+    suspend fun createCategory(request: NoticeCategoryRequest, account: Account): Result<NoticeCategoryDetailResponse?, ErrorData> = executeIn {
         request.createAccountId = account.accountId
         request.createAccountEmail = account.email
 
@@ -50,7 +49,7 @@ class NoticeCategoryService(
      * 공지사항 카테고리 목록을 조회한다.
      * @param searchParams 검색 조건
      */
-    suspend fun getCategories(searchParams: SearchParams) = executeIn {
+    suspend fun getCategories(searchParams: SearchParams): Result<PageResponse<NoticeCategoryResponse>?, ErrorData> = executeIn {
         coroutineScope {
             val criteria: Criteria = searchParams.buildCriteria(isFixTop = null)
             val sort: Sort = searchParams.buildSort()
@@ -71,6 +70,52 @@ class NoticeCategoryService(
                 currentPage = searchParams.page!!,
                 pageSize = countPerPage
             )
+        }
+    }
+
+    /**
+     * 카테고리 단일 조회
+     * @param id 조회할 카테고리 아이디
+     */
+    suspend fun getCategory(id: String): Result<NoticeCategoryDetailResponse?, ErrorData> = executeIn {
+        noticeCategoryRepository.findById(id)?.toResponse()
+    }
+
+    /**
+     * 카테고리 수정
+     * @param id 수정할 카테고리 아이디
+     * @param request 수정 요청
+     * @param account 수정 요청자 계정 정보
+     */
+    @Transactional
+    suspend fun updateCategory(id: String, request: NoticeCategoryRequest, account: Account): Result<NoticeCategoryDetailResponse?, ErrorData> =
+        executeIn {
+            val category: CmsNoticeCategory? = getCategory(id).component1()?.toEntity()
+            category?.setUpdateInfo(request = request, account = account)
+
+            category?.let {
+                noticeCategoryRepository.save(category).toResponse()
+            }
+        }
+
+    /**
+     * 카테고리 삭제
+     * @param id 삭제할 카테고리 아이디
+     * @param account 요청자 계정 정보
+     */
+    @Transactional
+    suspend fun deleteCategory(id: String, account: Account): Result<Unit?, ErrorData> = executeIn {
+        val category: CmsNoticeCategory? = getCategory(id).component1()?.toEntity()
+
+        if (category?.isDelete == true) Unit
+        else {
+            category?.isDelete = true
+            category?.setUpdateInfo(account)
+
+            category?.let {
+                noticeCategoryRepository.save(category)
+                toDeleteResponse()
+            }
         }
     }
 }

@@ -60,7 +60,7 @@ object ServiceOperator {
         }
 
     suspend fun <T> execute(
-        block: suspend () -> Result<T?, ErrorData>,
+        block: suspend () -> Result<T?, ErrorData>
     ): ResponseEntity<Response<Any>> = withContext(
         asContextElement(coroutineContext[ReactorContext]?.context?.get<String>(CONTEXT_NAME)!!)
     ) {
@@ -75,7 +75,7 @@ object ServiceOperator {
 
     suspend fun <T> executeIn(
         validator: suspend () -> Boolean,
-        action: suspend () -> T?,
+        action: suspend () -> T?
     ): Result<T?, ErrorData> = runSuspendCatching {
         require(validator())
         action()
@@ -84,7 +84,7 @@ object ServiceOperator {
     }
 
     suspend fun <T> executeIn(
-        action: suspend () -> T?,
+        action: suspend () -> T?
     ): Result<T?, ErrorData> = runSuspendCatching {
         action()
     }.mapError {
@@ -93,7 +93,7 @@ object ServiceOperator {
 
     suspend fun <T> executeIn(
         dispatcher: CoroutineDispatcher,
-        action: suspend () -> T?,
+        action: suspend () -> T?
     ): Result<T?, ErrorData> = runSuspendCatching {
         withContext(dispatcher) {
             action()
@@ -106,7 +106,7 @@ object ServiceOperator {
         dispatcher: CoroutineDispatcher,
         action: suspend () -> T?,
         fallback: suspend () -> T?,
-        afterJob: suspend (T) -> Unit,
+        afterJob: suspend (T) -> Unit
     ): Result<T?, ErrorData> = runSuspendCatching {
         action()
     }.recover {
