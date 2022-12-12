@@ -31,4 +31,4 @@ detekt_job:
 test:
   stage: test
   script:
-    - ./gradlew test
+    - ./gradlew koverVerify
