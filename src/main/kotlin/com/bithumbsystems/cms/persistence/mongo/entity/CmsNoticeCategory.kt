@@ -2,6 +2,7 @@ package com.bithumbsystems.cms.persistence.mongo.entity
 
 import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.model.request.NoticeCategoryRequest
+import com.bithumbsystems.cms.persistence.redis.entity.RedisNoticeCategory
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.MongoId
 import java.time.LocalDateTime
@@ -37,3 +38,8 @@ fun CmsNoticeCategory.setUpdateInfo(request: NoticeCategoryRequest, account: Acc
     updateAccountEmail = account.email
     updateDate = LocalDateTime.now()
 }
+
+fun CmsNoticeCategory.toRedisEntity() = RedisNoticeCategory(
+    id = id,
+    name = name
+)

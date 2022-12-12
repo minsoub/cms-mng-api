@@ -20,24 +20,24 @@ internal class QueryUtilTest {
     @Test
     fun `검색 유틸 테스트`() {
         val searchParamsPage = SearchParams(page = 0)
-        val searchParamsPageDBList = searchParamsPage.buildCriteria(isFixTop = true).criteriaObject["\$and"] as BasicDBList
+        val searchParamsPageDBList = searchParamsPage.buildCriteria(isFixTop = true, isDelete = false).criteriaObject["\$and"] as BasicDBList
 
         val searchParamsQuery = SearchParams(query = "1")
-        val searchParamsQueryDBList = searchParamsQuery.buildCriteria(isFixTop = null).criteriaObject["\$or"] as BasicDBList
+        val searchParamsQueryDBList = searchParamsQuery.buildCriteria(isFixTop = null, isDelete = false).criteriaObject["\$or"] as BasicDBList
 
         val searchParamsCategory = SearchParams(categoryId = "abcdef")
-        val searchParamsCategoryDBList = searchParamsCategory.buildCriteria(isFixTop = null).criteriaObject["\$and"] as BasicDBList
+        val searchParamsCategoryDBList = searchParamsCategory.buildCriteria(isFixTop = null, isDelete = false).criteriaObject["\$and"] as BasicDBList
 
         val searchParamsIsBanner = SearchParams(isBanner = true)
-        val searchParamsIsBannerDBList = searchParamsIsBanner.buildCriteria(isFixTop = null).criteriaObject["\$and"] as BasicDBList
+        val searchParamsIsBannerDBList = searchParamsIsBanner.buildCriteria(isFixTop = null, isDelete = false).criteriaObject["\$and"] as BasicDBList
 
         val searchParamsIsShow = SearchParams(isShow = true)
-        val searchParamsIsShowDBList = searchParamsIsShow.buildCriteria(isFixTop = null).criteriaObject["\$and"] as BasicDBList
+        val searchParamsIsShowDBList = searchParamsIsShow.buildCriteria(isFixTop = null, isDelete = false).criteriaObject["\$and"] as BasicDBList
 
         val searchParamsIsUse = SearchParams(isUse = true)
-        val searchParamsIsUseDBList = searchParamsIsUse.buildCriteria(isFixTop = null).criteriaObject["\$and"] as BasicDBList
+        val searchParamsIsUseDBList = searchParamsIsUse.buildCriteria(isFixTop = null, isDelete = false).criteriaObject["\$and"] as BasicDBList
 
-        searchParamsPage.buildCriteria(isFixTop = null) `should be equal to` Criteria()
+        searchParamsPage.buildCriteria(isFixTop = null, isDelete = null) `should be equal to` Criteria()
         (searchParamsPageDBList[0] as Document)["is_fix_top"] `should be` (true)
         (searchParamsQueryDBList[0] as Document)["title"].toString() `should be equal to` ".*1.*"
         (searchParamsQueryDBList[1] as Document)["content"].toString() `should be equal to` ".*1.*"
@@ -86,6 +86,6 @@ internal class QueryUtilTest {
         val query = searchParams.page?.let { searchParams.pageSize?.let { size -> PageRequest.of(it, size) } }
             ?.let { buildQuery(criteria = SearchParams(page = 0).buildCriteria(isFixTop = true), pageable = it, sort = null) }
 
-        query.toString() `should be equal to` "Query: { \"\$and\" : [{ \"is_fix_top\" : true}]}, Fields: {}, Sort: {}"
+        query.toString() `should be equal to` "Query: { \"\$and\" : [{ \"is_fix_top\" : true}, { \"is_delete\" : false}]}, Fields: {}, Sort: {}"
     }
 }
