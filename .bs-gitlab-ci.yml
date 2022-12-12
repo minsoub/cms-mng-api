@@ -1,4 +1,5 @@
 stages:
+  - compile
   - test
 
 before_script:
