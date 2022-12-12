@@ -17,7 +17,7 @@ object QueryUtil {
      * 검색 Criteria 생성
      * @param isFixTop 상단 고정 여부
      */
-    fun SearchParams.buildCriteria(isFixTop: Boolean?): Criteria {
+    fun SearchParams.buildCriteria(isFixTop: Boolean?, isDelete: Boolean? = false): Criteria {
         var orCriteriaList = listOf<Criteria>()
         val andCriteriaList = arrayListOf<Criteria>()
 
@@ -52,6 +52,10 @@ object QueryUtil {
 
         isFixTop?.let {
             andCriteriaList.add(Criteria.where("is_fix_top").`is`(isFixTop))
+        }
+
+        isDelete?.let {
+            andCriteriaList.add(Criteria.where("is_delete").`is`(isDelete))
         }
 
         return when {
