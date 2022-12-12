@@ -9,15 +9,15 @@ cache:
     - .gradle/wrapper
     - .gradle/caches
 
-# compile:
-#   stage: compile
-#   script:
-#     - ./gradlew assemble
+compile:
+  stage: compile
+  script:
+    - ./gradlew assemble
 
 code_style:
   stage: test
   script:
-    - ./gradlew ktlint
+    - ./gradlew ktlintCheck
   allow_failure: false
 
 detekt_job:
@@ -28,4 +28,4 @@ detekt_job:
 test:
   stage: test
   script:
-    - ./gradlew koverVerify
+    - ./gradlew test
