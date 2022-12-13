@@ -5,13 +5,12 @@ include:
 
 variables:
   SAST_JAVA_VERSION: "17"
-  SAST_DISABLE_DIND: "false"
-  
+
 stages:
   - compile
   - validate
-  - test
   - sast
+  - test
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
@@ -37,15 +36,6 @@ detekt_job:
   script:
     - ./gradlew detekt
 
-test:
-  stage: test
-  script:
-    - ./gradlew koverVerify
-  artifacts:
-    when: always
-    reports:
-      junit: build/test-results/test/**/TEST-*.xml
-
 spotbugs-sast:
     stage: sast
     artifacts:
@@ -54,3 +44,12 @@ spotbugs-sast:
     variables:
         SAST_EXCLUDED_PATHS: spec, test, tests, tmp, server/libs, assets, vendor, *.min.js
         SECURE_LOG_LEVEL: "info"
+
+test:
+  stage: test
+  script:
+    - ./gradlew koverVerify
+  artifacts:
+    when: always
+    reports:
+      junit: build/test-results/test/**/TEST-*.xml
