@@ -5,11 +5,13 @@ include:
 
 variables:
   SAST_JAVA_VERSION: "17"
-
+  SAST_DISABLE_DIND: "false"
+  
 stages:
   - compile
   - validate
   - test
+  - sast
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
@@ -45,10 +47,10 @@ test:
       junit: build/test-results/test/**/TEST-*.xml
 
 spotbugs-sast:
-    stage: test
+    stage: sast
     artifacts:
       paths:
         - 'gl-sast-report.json'
     variables:
         SAST_EXCLUDED_PATHS: spec, test, tests, tmp, server/libs, assets, vendor, *.min.js
-        SECURE_LOG_LEVEL: "debug"
+        SECURE_LOG_LEVEL: "info"
