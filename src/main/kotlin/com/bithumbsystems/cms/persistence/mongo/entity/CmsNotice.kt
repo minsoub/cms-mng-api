@@ -5,6 +5,7 @@ import com.bithumbsystems.cms.api.model.aggregate.Category
 import com.bithumbsystems.cms.api.model.constants.ShareConstants.NOTICE_TITLE
 import com.bithumbsystems.cms.api.model.request.NoticeRequest
 import com.bithumbsystems.cms.persistence.redis.entity.RedisNotice
+import org.springframework.data.annotation.ReadOnlyProperty
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.MongoId
 import java.time.LocalDateTime
@@ -40,6 +41,8 @@ class CmsNotice(
     var updateAccountId: String? = null
     var updateAccountEmail: String? = null
     var updateDate: LocalDateTime? = null
+
+    @ReadOnlyProperty
     var categoryName: List<Category> = listOf()
 }
 

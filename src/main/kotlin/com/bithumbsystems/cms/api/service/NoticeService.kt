@@ -2,8 +2,7 @@ package com.bithumbsystems.cms.api.service
 
 import com.bithumbsystems.cms.api.config.operator.ServiceOperator.executeIn
 import com.bithumbsystems.cms.api.config.resolver.Account
-import com.bithumbsystems.cms.api.model.enums.RedisKeys.CMS_NOTICE_BANNER
-import com.bithumbsystems.cms.api.model.enums.RedisKeys.CMS_NOTICE_FIX
+import com.bithumbsystems.cms.api.model.enums.RedisKeys.*
 import com.bithumbsystems.cms.api.model.request.*
 import com.bithumbsystems.cms.api.model.response.*
 import com.bithumbsystems.cms.api.util.Logger
@@ -16,6 +15,7 @@ import com.bithumbsystems.cms.persistence.mongo.entity.CmsNotice
 import com.bithumbsystems.cms.persistence.mongo.entity.setUpdateInfo
 import com.bithumbsystems.cms.persistence.mongo.entity.toRedisEntity
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsCustomRepository
+import com.bithumbsystems.cms.persistence.mongo.repository.CmsNoticeCustomRepository
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsNoticeRepository
 import com.bithumbsystems.cms.persistence.redis.entity.RedisNotice
 import com.bithumbsystems.cms.persistence.redis.repository.RedisRepository
@@ -36,6 +36,7 @@ import org.springframework.transaction.annotation.Transactional
 class NoticeService(
     private val noticeRepository: CmsNoticeRepository,
     private val noticeCustomRepository: CmsCustomRepository<CmsNotice>,
+    private val customRepository: CmsNoticeCustomRepository,
     private val fileService: FileService,
     private val redisRepository: RedisRepository
 ) {
@@ -54,7 +55,7 @@ class NoticeService(
         account: Account
     ): Result<NoticeDetailResponse?, ErrorData> = executeIn(
         validator = {
-            request.validate()
+            request.validate() && request.validateNotice()
         },
         action = {
             coroutineScope {
@@ -69,6 +70,7 @@ class NoticeService(
                     if (it.isFixTop) {
                         applyToRedis()
                     }
+                    applyTop5ToRedis()
                 }
                 noticeCustomRepository.findById(entity.id)?.toResponse()
             }
@@ -80,6 +82,16 @@ class NoticeService(
             redisRepository.addOrUpdateRBucket(
                 bucketKey = CMS_NOTICE_FIX,
                 value = totalList,
+                typeReference = object : TypeReference<List<RedisNotice>>() {}
+            )
+        }
+    }
+
+    private suspend fun applyTop5ToRedis() {
+        customRepository.findTop5ByIsDraftIsFalseOrderByScreenDateDescCreateDateDesc().map { it.toRedisEntity() }.toList().also { topList ->
+            redisRepository.addOrUpdateRBucket(
+                bucketKey = CMS_NOTICE_RECENT,
+                value = topList,
                 typeReference = object : TypeReference<List<RedisNotice>>() {}
             )
         }
@@ -148,6 +160,7 @@ class NoticeService(
                     if (isChange) {
                         applyToRedis()
                     }
+                    applyTop5ToRedis()
                 }
             }
         }
@@ -165,6 +178,7 @@ class NoticeService(
                         if (response.isFixTop) {
                             applyToRedis()
                         }
+                        applyTop5ToRedis()
                     }
                 }
             }

@@ -163,8 +163,8 @@ object QueryUtil {
         }
     }
 
-    fun buildAggregation(lookupOperation: LookupOperation, criteria: Criteria, pageable: Pageable, sort: Sort?): Aggregation {
-        val aggregation: List<AggregationOperation> = listOf(lookupOperation, Aggregation.match(criteria))
+    fun buildAggregation(lookUpOperation: LookupOperation, criteria: Criteria, pageable: Pageable, sort: Sort?): Aggregation {
+        val aggregation: List<AggregationOperation> = listOf(lookUpOperation, Aggregation.match(criteria))
         sort?.let {
             aggregation.plus(Aggregation.sort(it))
         }
@@ -173,6 +173,10 @@ object QueryUtil {
             aggregation.plus(Aggregation.limit(pageable.pageSize.toLong()))
         }
         return Aggregation.newAggregation(aggregation)
+    }
+
+    fun buildAggregation(aggregationList: List<AggregationOperation>): Aggregation {
+        return Aggregation.newAggregation(aggregationList)
     }
 }
 
