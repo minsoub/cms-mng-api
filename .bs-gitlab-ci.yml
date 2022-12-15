@@ -48,7 +48,7 @@ spotbugs-sast:
 test:
   stage: test
   script:
-    - ./gradlew koverVerify
+    - ./gradlew koverVerify -Pprofile=test
   artifacts:
     when: always
     reports:
