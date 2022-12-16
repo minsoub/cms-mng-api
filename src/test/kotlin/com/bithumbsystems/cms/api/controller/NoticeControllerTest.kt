@@ -2,33 +2,21 @@ package com.bithumbsystems.cms.api.controller
 
 import com.bithumbsystems.cms.api.model.enums.ResponseCode
 import com.bithumbsystems.cms.api.model.request.NoticeCategoryRequest
+import com.bithumbsystems.cms.api.model.request.NoticeRequest
 import com.bithumbsystems.cms.api.model.response.Response
 import org.amshove.kluent.`should be`
 import org.junit.jupiter.api.*
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.autoconfigure.web.reactive.AutoConfigureWebTestClient
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.test.context.ActiveProfiles
+import org.springframework.http.MediaType
+import org.springframework.http.client.MultipartBodyBuilder
 import org.springframework.test.web.reactive.server.WebTestClient
+import org.springframework.web.reactive.function.BodyInserters
 import reactor.core.publisher.Mono
 import java.util.*
 
-@SpringBootTest
-@AutoConfigureWebTestClient
-@ActiveProfiles("test")
-@TestInstance(TestInstance.Lifecycle.PER_CLASS)
-@TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class NoticeControllerTest @Autowired constructor(
     private val client: WebTestClient
-) {
-    companion object {
-        private const val token =
-            "eyJhbGciOiJIUzUxMiJ9.eyJhY2NvdW50X2lkIjoiYmRhMGY4ZjAzZjhlMTFlZGI4NzgwMjQyYWMxMjAwMDIiLCJST0xFIjpbIkNQQy1TSVRFLUFETUlOIiwiTFJDLVNJVEUtQ" +
-                "URNSU4iLCJTVVBFUi1BRE1JTiJdLCJ1c2VyX2lkIjoiam1jQGJpdGh1bWJzeXN0ZW1zLmNvbSIsImlzcyI6ImptY0BiaXRodW1ic3lzdGVtcy5jb20iLCJzdWIiOiI2MmE" +
-                "xNWY0YWU0MTI5YjUxOGIxMzMxMjgiLCJpYXQiOjE2Njk5NzQwMTIsImp0aSI6ImYwZDY3ZWQ0LTRkZGMtNDJlMi05NTg0LWI1OWE1ZGViYzZiMyIsImV4cCI6OTI0NjQ0N" +
-                "zAwMDB9.7M9HsUH9K4qg-c4RKrohujmR83InWr1UJr2kZkcLKD_Sp1I4IoByaCF-yaBB9i3i8KAQryVTlC9OxkA4TCnyEg"
-        private lateinit var id: String
-    }
+) : CommonControllerTest() {
 
     @Test
     @Order(1)
@@ -101,6 +89,95 @@ class NoticeControllerTest @Autowired constructor(
     fun `카테고리 삭제 테스트`() {
         val responseBody: Response<*>? = client.delete()
             .uri("/api/v1/mng/cms/notices/categories/$id}")
+            .header("authorization", "Bearer $token")
+            .exchange()
+            .expectStatus().isOk
+            .expectBody(Response::class.java)
+            .returnResult().responseBody
+
+        println(responseBody)
+        responseBody?.result `should be` ResponseCode.SUCCESS
+    }
+
+    @Test
+    @Order(6)
+    fun `공지사항 등록 테스트`() {
+        val body = NoticeRequest(title = "제목", content = "본문", categoryId = listOf(UUID.randomUUID().toString().replace("-", "")))
+        val bodyBuilder: MultipartBodyBuilder = MultipartBodyBuilder().apply {
+            this.asyncPart("request", Mono.just(body), NoticeRequest::class.java)
+        }
+
+        val responseBody: Response<*>? = client.post()
+            .uri("/api/v1/mng/cms/press-releases")
+            .header("authorization", "Bearer $token")
+            .contentType(MediaType.MULTIPART_FORM_DATA)
+            .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
+            .exchange()
+            .expectStatus().isOk
+            .expectBody(Response::class.java)
+            .returnResult().responseBody
+
+        println(responseBody)
+        id = responseBody?.data.toString().substringAfter("=").substringBefore(",")
+        responseBody?.result `should be` ResponseCode.SUCCESS
+    }
+
+    @Test
+    @Order(7)
+    fun `공지사항 목록 조회 테스트`() {
+        val responseBody: Response<*>? = client.get()
+            .uri("/api/v1/mng/cms/press-releases")
+            .exchange()
+            .expectStatus().isOk
+            .expectBody(Response::class.java)
+            .returnResult().responseBody
+
+        println(responseBody)
+        responseBody?.result `should be` ResponseCode.SUCCESS
+        responseBody?.data?.toString()?.isNotEmpty() `should be` true
+    }
+
+    @Test
+    @Order(8)
+    fun `공지사항 조회 테스트`() {
+        val responseBody: Response<*>? = client.get()
+            .uri("/api/v1/mng/cms/press-releases/$id}")
+            .exchange()
+            .expectStatus().isOk
+            .expectBody(Response::class.java)
+            .returnResult().responseBody
+
+        println(responseBody)
+        responseBody?.result `should be` ResponseCode.SUCCESS
+    }
+
+    @Test
+    @Order(9)
+    fun `공지사항 수정 테스트`() {
+        val body = NoticeRequest(title = "제목2", content = "본문2", categoryId = listOf(UUID.randomUUID().toString().replace("-", "")))
+        val bodyBuilder: MultipartBodyBuilder = MultipartBodyBuilder().apply {
+            this.asyncPart("request", Mono.just(body), NoticeRequest::class.java)
+        }
+
+        val responseBody: Response<*>? = client.put()
+            .uri("/api/v1/mng/cms/press-releases/$id}")
+            .header("authorization", "Bearer $token")
+            .contentType(MediaType.MULTIPART_FORM_DATA)
+            .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
+            .exchange()
+            .expectStatus().isOk
+            .expectBody(Response::class.java)
+            .returnResult().responseBody
+
+        println(responseBody)
+        responseBody?.result `should be` ResponseCode.SUCCESS
+    }
+
+    @Test
+    @Order(10)
+    fun `공지사항 삭제 테스트`() {
+        val responseBody: Response<*>? = client.delete()
+            .uri("/api/v1/mng/cms/press-releases/$id}")
             .header("authorization", "Bearer $token")
             .exchange()
             .expectStatus().isOk

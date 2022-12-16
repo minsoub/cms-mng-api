@@ -48,7 +48,9 @@ class NoticeCategoryService(
         val entity: CmsNoticeCategory = request.toEntity()
 
         noticeCategoryRepository.save(entity).toResponse().also {
-            redisRepository.addRListValue(listKey = CMS_NOTICE_CATEGORY, value = entity.toRedisEntity(), clazz = RedisNoticeCategory::class.java)
+            if (it.isUse) {
+                redisRepository.addRListValue(listKey = CMS_NOTICE_CATEGORY, value = entity.toRedisEntity(), clazz = RedisNoticeCategory::class.java)
+            }
         }
     }
 
@@ -102,9 +104,8 @@ class NoticeCategoryService(
     suspend fun updateCategory(id: String, request: NoticeCategoryRequest, account: Account): Result<NoticeCategoryDetailResponse?, ErrorData> =
         executeIn {
             val category: CmsNoticeCategory? = getCategory(id).component1()?.toEntity()
-            category?.setUpdateInfo(request = request, account = account)
-
             category?.let {
+                category.setUpdateInfo(request = request, account = account)
                 noticeCategoryRepository.save(category).toResponse().also { response ->
                     takeIf { !response.isUse }?.deleteRedisCategory(response) ?: takeIf {
                         redisRepository.getRListValueById(
@@ -145,19 +146,16 @@ class NoticeCategoryService(
      * @param account 요청자 계정 정보
      */
     @Transactional
-    suspend fun deleteCategory(id: String, account: Account): Result<Unit?, ErrorData> = executeIn {
-        val category: CmsNoticeCategory? = getCategory(id).component1()?.toEntity()
+    suspend fun deleteCategory(id: String, account: Account): Result<NoticeCategoryDetailResponse?, ErrorData> = executeIn {
+        getCategory(id).component1()?.toEntity()?.let {
+            if (it.isDelete) it.toResponse()
+            else {
+                it.isDelete = true
+                it.setUpdateInfo(account)
 
-        if (category?.isDelete == true) Unit
-        else {
-            category?.isDelete = true
-            category?.setUpdateInfo(account)
-
-            category?.let {
-                noticeCategoryRepository.save(category).also {
-                    redisRepository.deleteRListValue(listKey = CMS_NOTICE_CATEGORY, id = it.id, clazz = RedisNoticeCategory::class.java)
-                }
-                toDeleteResponse()
+                noticeCategoryRepository.save(it).also { entity ->
+                    redisRepository.deleteRListValue(listKey = CMS_NOTICE_CATEGORY, id = entity.id, clazz = RedisNoticeCategory::class.java)
+                }.toResponse()
             }
         }
     }

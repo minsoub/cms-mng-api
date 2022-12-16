@@ -206,8 +206,8 @@ class NoticeCategoryServiceTest {
             redisRepository.deleteRListValue(CMS_NOTICE_CATEGORY, entity.id, RedisNoticeCategory::class.java)
         } returns entity.toRedisEntity()
 
-        val result: Result<Unit?, ErrorData> = noticeCategoryService.deleteCategory(entity.id, account)
+        val result: Result<NoticeCategoryDetailResponse?, ErrorData> = noticeCategoryService.deleteCategory(entity.id, account)
 
-        result.component1() `should be` Unit
+        result.component1()?.isDelete `should be` true
     }
 }
