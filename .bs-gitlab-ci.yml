@@ -9,8 +9,8 @@ variables:
 stages:
   - compile
   - validate
-  - sast
-  # - test
+  # - sast
+  - test
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
@@ -37,7 +37,7 @@ detekt_job:
     - ./gradlew detekt
 
 spotbugs-sast:
-    stage: sast
+    stage: test
     artifacts:
       paths:
         - 'gl-sast-report.json'
