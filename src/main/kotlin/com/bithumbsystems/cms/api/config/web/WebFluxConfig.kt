@@ -29,7 +29,7 @@ class WebFluxConfig(
 ) : WebFluxConfigurer {
 
     companion object {
-        const val DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm"
+        const val DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss"
     }
 
     override fun configureHttpMessageCodecs(configurer: ServerCodecConfigurer) {

@@ -44,5 +44,8 @@ enum class RedisKeys {
     LIST_TEST_KEY,
 
     @Schema(description = "ScoredSortedSetReactive 테스트용 키")
-    SORTED_SET_TEST_KEY
+    SORTED_SET_TEST_KEY,
+
+    @Schema(description = "RBucket 테스트용 키")
+    BUCKET_TEST_KEY,
 }

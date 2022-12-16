@@ -31,5 +31,3 @@ data class ErrorData(
     @Schema(description = "에러 메시지")
     val message: String?
 )
-
-fun toDeleteResponse() = Unit

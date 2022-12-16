@@ -43,7 +43,7 @@ class RedisRepositoryTest @Autowired constructor(
         redisRepository.addOrUpdateRMapCacheValue(
             mapKey = MAP_TEST_KEY,
             valueKey = id,
-            value = TestData(id, "test", LocalDateTime.now()),
+            value = TestData(id = id, name = "test", createDate = LocalDateTime.now()),
             clazz = TestData::class.java
         )?.id `should be equal to` id
     }
@@ -75,7 +75,7 @@ class RedisRepositoryTest @Autowired constructor(
     @Order(5)
     @Test
     fun addRScoredSortedSetValue() = runTest {
-        var test = TestData(UUID.randomUUID().toString().replace("-", ""), "test1", LocalDateTime.now())
+        var test = TestData(id = UUID.randomUUID().toString().replace("-", ""), name = "test1", createDate = LocalDateTime.now())
         val first: Boolean? = redisRepository.addRScoredSortedSetValue(
             setKey = SORTED_SET_TEST_KEY,
             score = test.getScore(),
@@ -83,7 +83,7 @@ class RedisRepositoryTest @Autowired constructor(
             clazz = TestData::class.java
         )
 
-        test = TestData(id, "test12", LocalDateTime.now().plusMinutes(1))
+        test = TestData(id = id, name = "test12", createDate = LocalDateTime.now().plusMinutes(1))
         val second: Boolean? = redisRepository.addRScoredSortedSetValue(
             setKey = SORTED_SET_TEST_KEY,
             score = test.getScore(),
@@ -91,7 +91,11 @@ class RedisRepositoryTest @Autowired constructor(
             clazz = TestData::class.java
         )
 
-        test = TestData(UUID.randomUUID().toString().replace("-", ""), "test2", LocalDateTime.now().plusMinutes(1))
+        test = TestData(
+            id = UUID.randomUUID().toString().replace("-", ""),
+            name = "test2",
+            createDate = LocalDateTime.now().plusMinutes(1)
+        )
         val third: Boolean? = redisRepository.addRScoredSortedSetValue(
             setKey = SORTED_SET_TEST_KEY,
             score = test.getScore(),
@@ -99,7 +103,11 @@ class RedisRepositoryTest @Autowired constructor(
             clazz = TestData::class.java
         )
 
-        test = TestData(UUID.randomUUID().toString().replace("-", ""), "test3", LocalDateTime.now().plusMinutes(2))
+        test = TestData(
+            id = UUID.randomUUID().toString().replace("-", ""),
+            name = "test3",
+            createDate = LocalDateTime.now().plusMinutes(2)
+        )
         val fourth: Boolean? = redisRepository.addRScoredSortedSetValue(
             setKey = SORTED_SET_TEST_KEY,
             score = test.getScore(),
@@ -155,7 +163,7 @@ class RedisRepositoryTest @Autowired constructor(
     fun addRListValue() = runTest {
         val first: Boolean? = redisRepository.addRListValue(
             listKey = LIST_TEST_KEY,
-            value = TestData(UUID.randomUUID().toString().replace("-", ""), "test1", LocalDateTime.now()),
+            value = TestData(id = UUID.randomUUID().toString().replace("-", ""), name = "test1", createDate = LocalDateTime.now()),
             clazz = TestData::class.java
         )
         target = TestData(id, "test2", LocalDateTime.now())
@@ -167,7 +175,7 @@ class RedisRepositoryTest @Autowired constructor(
 
         val third: Boolean? = redisRepository.addRListValue(
             listKey = LIST_TEST_KEY,
-            value = TestData(UUID.randomUUID().toString().replace("-", ""), "test3", LocalDateTime.now()),
+            value = TestData(id = UUID.randomUUID().toString().replace("-", ""), name = "test3", createDate = LocalDateTime.now()),
             clazz = TestData::class.java
         )
 
@@ -183,9 +191,9 @@ class RedisRepositoryTest @Autowired constructor(
         redisRepository.addAllRListValue(
             listKey = LIST_TEST_KEY,
             value = listOf(
-                TestData(UUID.randomUUID().toString().replace("-", ""), "test11", LocalDateTime.now()),
-                TestData(UUID.randomUUID().toString().replace("-", ""), "test22", LocalDateTime.now()),
-                TestData(UUID.randomUUID().toString().replace("-", ""), "test33", LocalDateTime.now())
+                TestData(id = UUID.randomUUID().toString().replace("-", ""), name = "test11", createDate = LocalDateTime.now()),
+                TestData(id = UUID.randomUUID().toString().replace("-", ""), name = "test22", createDate = LocalDateTime.now()),
+                TestData(id = UUID.randomUUID().toString().replace("-", ""), name = "test33", createDate = LocalDateTime.now())
             ),
             clazz = TestData::class.java
         ) `should be` true
@@ -199,6 +207,7 @@ class RedisRepositoryTest @Autowired constructor(
         val list: MutableList<TestData>? =
             result.iterator().collectSortedList(compareBy<TestData?> { it?.createDate }.thenBy { it?.name }).awaitSingleOrNull()
 
+        result.size().awaitSingleOrNull()?.`should be greater than`(0)
         list?.size?.`should be greater than`(0)
     }
 
@@ -246,12 +255,36 @@ class RedisRepositoryTest @Autowired constructor(
         redisRepository.deleteRList(listKey = LIST_TEST_KEY, clazz = TestData::class.java) `should be` true
     }
 
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Order(17)
+    @Test
+    fun addRBucketAndGetRBucket() = runTest {
+        val name = "test1"
+        redisRepository.addOrUpdateRBucket(
+            bucketKey = BUCKET_TEST_KEY,
+            value = TestData(id = UUID.randomUUID().toString().replace("-", ""), name = name, createDate = LocalDateTime.now()),
+            clazz = TestData::class.java
+        )
+
+        val result: TestData? = redisRepository.getRBucket(bucketKey = BUCKET_TEST_KEY, clazz = TestData::class.java).get().awaitSingleOrNull()
+
+        result?.name.equals(name) `should be` true
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Order(18)
+    @Test
+    fun deleteRBucket() = runTest {
+        val result: Boolean? = redisRepository.deleteRBucket(bucketKey = BUCKET_TEST_KEY, clazz = TestData::class.java)
+
+        result `should be` true
+    }
+
     data class TestData(
         val id: String,
         var name: String,
         val createDate: LocalDateTime
     )
 
-    fun TestData.getScore() =
-        createDate.toEpochSecond(ZoneOffset.UTC).toDouble()
+    fun TestData.getScore() = createDate.toEpochSecond(ZoneOffset.UTC).toDouble()
 }

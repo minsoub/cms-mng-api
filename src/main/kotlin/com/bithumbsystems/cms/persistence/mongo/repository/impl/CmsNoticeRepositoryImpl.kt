@@ -1,7 +1,8 @@
-package com.bithumbsystems.cms.persistence.mongo.repository
+package com.bithumbsystems.cms.persistence.mongo.repository.impl
 
 import com.bithumbsystems.cms.api.util.QueryUtil.buildQuery
-import com.bithumbsystems.cms.persistence.mongo.entity.CmsNoticeCategory
+import com.bithumbsystems.cms.persistence.mongo.entity.CmsNotice
+import com.bithumbsystems.cms.persistence.mongo.repository.CmsCustomRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
 import kotlinx.coroutines.reactive.awaitSingle
@@ -13,13 +14,13 @@ import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Repository
 
 @Repository
-class CmsNoticeCategoryRepositoryImpl(
+class CmsNoticeRepositoryImpl(
     private val reactiveMongoTemplate: ReactiveMongoTemplate
-) : CmsCustomRepository<CmsNoticeCategory> {
+) : CmsCustomRepository<CmsNotice> {
     override suspend fun countAllByCriteria(criteria: Criteria): Long =
-        reactiveMongoTemplate.count(Query.query(criteria), CmsNoticeCategory::class.java).awaitSingle()
+        reactiveMongoTemplate.count(Query.query(criteria), CmsNotice::class.java).awaitSingle()
 
-    override fun findAllByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<CmsNoticeCategory> =
-        reactiveMongoTemplate.find(buildQuery(criteria, pageable, sort), CmsNoticeCategory::class.java)
+    override fun findAllByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<CmsNotice> =
+        reactiveMongoTemplate.find(buildQuery(criteria, pageable, sort), CmsNotice::class.java)
             .asFlow()
 }

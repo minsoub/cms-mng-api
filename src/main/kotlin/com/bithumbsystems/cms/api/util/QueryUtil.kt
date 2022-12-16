@@ -97,6 +97,10 @@ object QueryUtil {
         return Sort.by(Direction.fromString(sortDirection.toString()), sortBy.value)
     }
 
+    fun buildSortForFix(): Sort {
+        return Sort.by(Direction.DESC, "screen_date", "create_date")
+    }
+
     /**
      * 검색, 페이징, 정렬 쿼리 생성
      * @param criteria 검색

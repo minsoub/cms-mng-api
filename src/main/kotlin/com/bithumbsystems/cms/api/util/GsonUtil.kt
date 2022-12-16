@@ -9,7 +9,7 @@ import com.google.gson.stream.JsonWriter
 import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 
-private const val DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm"
+private const val DATE_TIME_PATTERN = "yyyy-MM-dd HH:mm:ss"
 
 object GsonUtil {
 

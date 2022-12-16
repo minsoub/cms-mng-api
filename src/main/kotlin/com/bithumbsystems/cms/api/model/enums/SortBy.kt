@@ -22,9 +22,9 @@ enum class SortBy(val value: String) {
     @Schema(description = "제목")
     TITLE("title"),
 
-    @Schema(description = "생성자 이메일")
+    @Schema(description = "생성자 이메일", example = "abc@example.com")
     CREATE_ACCOUNT_EMAIL("create_account_email"),
 
-    @Schema(description = "수정자 이메일")
+    @Schema(description = "수정자 이메일", example = "abc@example.com")
     UPDATE_ACCOUNT_EMAIL("update_account_email"),
 }
