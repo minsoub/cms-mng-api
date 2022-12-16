@@ -10,7 +10,7 @@ stages:
   - compile
   - validate
   - sast
-  - test
+  # - test
 
 before_script:
   - export GRADLE_USER_HOME=`pwd`/.gradle
@@ -45,11 +45,11 @@ spotbugs-sast:
         SAST_EXCLUDED_PATHS: spec, test, tests, tmp, server/libs, assets, vendor, *.min.js
         SECURE_LOG_LEVEL: "info"
 
-test:
-  stage: test
-  script:
-    - ./gradlew koverVerify -Pprofile=test
-  artifacts:
-    when: always
-    reports:
-      junit: build/test-results/test/**/TEST-*.xml
+# test:
+#   stage: test
+#   script:
+#     - ./gradlew koverVerify -Pprofile=test
+#   artifacts:
+#     when: always
+#     reports:
+#       junit: build/test-results/test/**/TEST-*.xml
