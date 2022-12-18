@@ -7,11 +7,15 @@ import com.bithumbsystems.cms.api.util.NullUtil.letIfAllNotNull
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.domain.Sort.Direction
+import org.springframework.data.mongodb.core.aggregation.Aggregation
+import org.springframework.data.mongodb.core.aggregation.LookupOperation
+import org.springframework.data.mongodb.core.aggregation.MatchOperation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 
 object QueryUtil {
     private fun makeRegex(searchText: String): String = ".*$searchText.*"
+    private const val MAX_FIX_SIZE = 15L
 
     /**
      * 검색 Criteria 생성
@@ -112,6 +116,45 @@ object QueryUtil {
             Query.query(criteria).with(pageable)
         } else {
             Query.query(criteria).with(pageable).with(sort)
+        }
+    }
+
+    fun buildFixAggregation(lookUpOperation: LookupOperation?): Aggregation {
+        val matchOperation: MatchOperation = Aggregation.match(
+            Criteria.where("is_fix_top").`is`(true).andOperator(Criteria.where("is_delete").`is`(false))
+        )
+        return if (lookUpOperation == null) {
+            Aggregation.newAggregation(
+                matchOperation,
+                Aggregation.sort(buildSortForFix()),
+                Aggregation.limit(MAX_FIX_SIZE)
+            )
+        } else {
+            Aggregation.newAggregation(
+                lookUpOperation,
+                matchOperation,
+                Aggregation.sort(buildSortForFix()),
+                Aggregation.limit(MAX_FIX_SIZE)
+            )
+        }
+    }
+
+    fun buildAggregation(lookupOperation: LookupOperation, criteria: Criteria, pageable: Pageable, sort: Sort?): Aggregation {
+        return if (sort == null) {
+            Aggregation.newAggregation(
+                lookupOperation,
+                Aggregation.match(criteria),
+                Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
+                Aggregation.limit(pageable.pageSize.toLong())
+            )
+        } else {
+            Aggregation.newAggregation(
+                lookupOperation,
+                Aggregation.match(criteria),
+                Aggregation.sort(sort),
+                Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()),
+                Aggregation.limit(pageable.pageSize.toLong())
+            )
         }
     }
 }

@@ -3,7 +3,8 @@ package com.bithumbsystems.cms.api.service
 import com.bithumbsystems.cms.api.config.operator.ServiceOperator.executeIn
 import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.model.constants.PageConstants.FIX_MAX_SIZE
-import com.bithumbsystems.cms.api.model.enums.RedisKeys
+import com.bithumbsystems.cms.api.model.enums.RedisKeys.CMS_NOTICE_BANNER
+import com.bithumbsystems.cms.api.model.enums.RedisKeys.CMS_NOTICE_FIX
 import com.bithumbsystems.cms.api.model.request.*
 import com.bithumbsystems.cms.api.model.response.*
 import com.bithumbsystems.cms.api.util.Logger
@@ -64,17 +65,19 @@ class NoticeService(
 
                 noticeRepository.save(entity).toResponse().also {
                     if (it.isFixTop) {
-                        redisRepository.addRListValue(
-                            listKey = RedisKeys.CMS_NOTICE_FIX,
-                            value = entity.toRedisEntity(),
-                            clazz = RedisNotice::class.java
-                        )
-                        // todo fixed만 레디스로 등록
+                        applyToRedis()
                     }
                 }
+                noticeCustomRepository.findById(entity.id)?.toResponse()
             }
         }
     )
+
+    private suspend fun applyToRedis() {
+        noticeCustomRepository.getFixItems().map { item -> item.toRedisEntity() }.toList().also { totalList ->
+            redisRepository.addOrUpdateRBucket(CMS_NOTICE_FIX, totalList, List::class.java)
+        }
+    }
 
     suspend fun getNotices(searchParams: SearchParams): Result<PageResponse<NoticeResponse>?, ErrorData> = executeIn {
         coroutineScope {
@@ -111,8 +114,8 @@ class NoticeService(
         }
     }
 
-    suspend fun getNotice(id: String) = executeIn {
-        noticeRepository.findById(id)?.toResponse()
+    suspend fun getNotice(id: String): Result<NoticeDetailResponse?, ErrorData> = executeIn {
+        noticeCustomRepository.findById(id)?.toResponse()
     }
 
     @Transactional
@@ -128,22 +131,31 @@ class NoticeService(
         action = {
             fileService.addFileInfo(fileRequest = fileRequest, account = account, request = request)
 
-            getNotice(id).component1()?.toEntity()?.let {
+            noticeCustomRepository.findById(id)?.let {
+                val isChange: Boolean = it.isFixTop != request.isFixTop
                 it.setUpdateInfo(request = request, account = account)
-                noticeRepository.save(it).toResponse() // todo fixed redis
+                noticeRepository.save(it).toResponse().also {
+                    if (isChange) {
+                        applyToRedis()
+                    }
+                }
             }
         }
     )
 
     @Transactional
     suspend fun deleteNotice(id: String, account: Account): Result<NoticeDetailResponse?, ErrorData> = executeIn {
-        getNotice(id).component1()?.toEntity()?.let {
+        noticeCustomRepository.findById(id)?.let {
             when (it.isDelete) {
                 true -> it.toResponse()
                 false -> {
                     it.isDelete = true
                     it.setUpdateInfo(account)
-                    noticeRepository.save(it).toResponse() // todo fixed redis
+                    noticeRepository.save(it).toResponse().also { response ->
+                        if (response.isFixTop) {
+                            applyToRedis()
+                        }
+                    }
                 }
             }
         }
@@ -151,13 +163,15 @@ class NoticeService(
 
     @Transactional
     suspend fun setNoticeBanner(id: String, account: Account): Result<NoticeDetailResponse?, ErrorData> = executeIn {
-        getNotice(id).component1()?.toEntity()?.let {
+        noticeRepository.findById(id)?.let {
             when (it.isBanner) {
                 true -> it.toResponse()
                 else -> {
                     it.isBanner = true
                     it.setUpdateInfo(account)
-                    noticeRepository.save(it).toResponse() // todo 배너 redis
+                    noticeRepository.save(it).toResponse().also { response ->
+                        redisRepository.addOrUpdateRBucket(CMS_NOTICE_BANNER, response.toRedisEntity(), RedisNotice::class.java)
+                    }
                 }
             }
         }
