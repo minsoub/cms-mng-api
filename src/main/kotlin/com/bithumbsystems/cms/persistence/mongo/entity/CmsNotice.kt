@@ -77,5 +77,6 @@ fun CmsNotice.setUpdateInfo(request: NoticeRequest, account: Account) {
 fun CmsNotice.toRedisEntity(): RedisNotice = RedisNotice(
     id = id,
     title = title,
+    categoryName = categoryName.map { it.name }.toList(),
     screenDate = screenDate ?: createDate
 )

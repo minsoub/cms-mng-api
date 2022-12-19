@@ -15,7 +15,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
-import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Service
@@ -47,19 +47,15 @@ class InvestWarningService(
         }
     )
 
-    suspend fun getInvestWarnings(searchParams: SearchParams): Result<PageResponse<InvestWarningResponse>?, ErrorData> = executeIn {
+    suspend fun getInvestWarnings(searchParams: SearchParams): Result<ListResponse<InvestWarningResponse>?, ErrorData> = executeIn {
         coroutineScope {
             val criteria: Criteria = searchParams.buildCriteria(isFixTop = null, isDelete = false)
             val sort: Sort = searchParams.buildSort()
-            val count: Deferred<Long> = async {
-                investWarningCustomRepository.countAllByCriteria(criteria)
-            }
-            val countPerPage: Int = searchParams.pageSize!!
 
             val investWarnings: Deferred<List<InvestWarningResponse>> = async {
                 investWarningCustomRepository.findAllByCriteria(
                     criteria = criteria,
-                    pageable = PageRequest.of(searchParams.page!!, countPerPage),
+                    pageable = Pageable.unpaged(),
                     sort = sort
                 )
                     .map { it.toMaskingResponse() }
@@ -68,11 +64,9 @@ class InvestWarningService(
 
             // todo 로직들 반영
 
-            PageResponse(
+            ListResponse(
                 contents = investWarnings.await(),
-                totalCounts = count.await(),
-                currentPage = searchParams.page!!,
-                pageSize = countPerPage
+                totalCounts = investWarnings.await().size.toLong()
             )
         }
     }

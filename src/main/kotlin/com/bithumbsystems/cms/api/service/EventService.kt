@@ -15,7 +15,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
-import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Service
@@ -47,19 +47,15 @@ class EventService(
         }
     )
 
-    suspend fun getEvents(searchParams: SearchParams) = executeIn {
+    suspend fun getEvents(searchParams: SearchParams): Result<ListResponse<EventResponse>?, ErrorData> = executeIn {
         coroutineScope {
             val criteria: Criteria = searchParams.buildCriteria(isFixTop = null, isDelete = false)
             val sort: Sort = searchParams.buildSort()
-            val count: Deferred<Long> = async {
-                eventCustomRepository.countAllByCriteria(criteria)
-            }
-            val countPerPage: Int = searchParams.pageSize!!
 
             val notices: Deferred<List<EventResponse>> = async {
                 eventCustomRepository.findAllByCriteria(
                     criteria = criteria,
-                    pageable = PageRequest.of(searchParams.page!!, countPerPage),
+                    pageable = Pageable.unpaged(),
                     sort = sort
                 )
                     .map { it.toMaskingResponse() }
@@ -68,11 +64,9 @@ class EventService(
 
             // todo 로직들 반영
 
-            PageResponse(
+            ListResponse(
                 contents = notices.await(),
-                totalCounts = count.await(),
-                currentPage = searchParams.page!!,
-                pageSize = countPerPage
+                totalCounts = notices.await().size.toLong()
             )
         }
     }

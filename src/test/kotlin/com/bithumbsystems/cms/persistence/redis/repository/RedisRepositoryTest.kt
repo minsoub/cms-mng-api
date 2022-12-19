@@ -1,6 +1,7 @@
 package com.bithumbsystems.cms.persistence.redis.repository
 
 import com.bithumbsystems.cms.api.model.enums.RedisKeys.*
+import com.fasterxml.jackson.core.type.TypeReference
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import kotlinx.coroutines.test.runTest
@@ -260,13 +261,14 @@ class RedisRepositoryTest @Autowired constructor(
     @Test
     fun addRBucketAndGetRBucket() = runTest {
         val name = "test1"
+        val typeReference = object : TypeReference<TestData>() {}
         redisRepository.addOrUpdateRBucket(
             bucketKey = BUCKET_TEST_KEY,
             value = TestData(id = UUID.randomUUID().toString().replace("-", ""), name = name, createDate = LocalDateTime.now()),
-            clazz = TestData::class.java
+            typeReference = typeReference
         )
 
-        val result: TestData? = redisRepository.getRBucket(bucketKey = BUCKET_TEST_KEY, clazz = TestData::class.java).get().awaitSingleOrNull()
+        val result: TestData? = redisRepository.getRBucket(bucketKey = BUCKET_TEST_KEY, typeReference = typeReference).get().awaitSingleOrNull()
 
         result?.name.equals(name) `should be` true
     }
@@ -274,8 +276,36 @@ class RedisRepositoryTest @Autowired constructor(
     @OptIn(ExperimentalCoroutinesApi::class)
     @Order(18)
     @Test
+    fun addRBucketListAndGetRBucketList() = runTest {
+        val name = "test1"
+        val typeReference = object : TypeReference<List<TestData>>() {}
+        val list: List<TestData> = listOf(
+            TestData(id = UUID.randomUUID().toString().replace("-", ""), name = name, createDate = LocalDateTime.now()),
+            TestData(id = UUID.randomUUID().toString().replace("-", ""), name = name.plus("1"), createDate = LocalDateTime.now()),
+            TestData(id = UUID.randomUUID().toString().replace("-", ""), name = name.plus("2"), createDate = LocalDateTime.now()),
+            TestData(id = UUID.randomUUID().toString().replace("-", ""), name = name.plus("3"), createDate = LocalDateTime.now()),
+            TestData(id = UUID.randomUUID().toString().replace("-", ""), name = name.plus("4"), createDate = LocalDateTime.now())
+        )
+
+        redisRepository.addOrUpdateRBucket(
+            bucketKey = BUCKET_TEST_KEY,
+            value = list,
+            typeReference = typeReference
+        )
+
+        val result: List<TestData>? =
+            redisRepository.getRBucket(bucketKey = BUCKET_TEST_KEY, typeReference = typeReference).get()
+                .awaitSingleOrNull()
+
+        result?.size?.`should be greater than`(0)
+        result?.get(0)?.name.equals(name) `should be` true
+    }
+
+    @OptIn(ExperimentalCoroutinesApi::class)
+    @Order(19)
+    @Test
     fun deleteRBucket() = runTest {
-        val result: Boolean? = redisRepository.deleteRBucket(bucketKey = BUCKET_TEST_KEY, clazz = TestData::class.java)
+        val result: Boolean? = redisRepository.deleteRBucket(bucketKey = BUCKET_TEST_KEY, typeReference = object : TypeReference<List<TestData>>() {})
 
         result `should be` true
     }

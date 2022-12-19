@@ -4,8 +4,6 @@ import com.bithumbsystems.cms.api.config.operator.ServiceOperator.execute
 import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.config.resolver.CurrentUser
 import com.bithumbsystems.cms.api.config.resolver.QueryParam
-import com.bithumbsystems.cms.api.model.enums.SortBy
-import com.bithumbsystems.cms.api.model.enums.SortDirection
 import com.bithumbsystems.cms.api.model.request.FileRequest
 import com.bithumbsystems.cms.api.model.request.InvestWarningRequest
 import com.bithumbsystems.cms.api.model.request.SearchParams
@@ -85,77 +83,28 @@ class InvestWarningController(
         ],
         parameters = [
             Parameter(
-                description = "이동할 페이지",
-                name = "page",
-                `in` = ParameterIn.QUERY,
-                schema = Schema(implementation = Int::class),
-                example = "0"
-            ),
-            Parameter(
-                description = "페이지 사이즈",
-                name = "page_size",
-                `in` = ParameterIn.QUERY,
-                schema = Schema(implementation = Int::class),
-                example = "15"
-            ),
-            Parameter(
-                description = "검색어",
+                description = "제목/내용",
                 name = "query",
                 `in` = ParameterIn.QUERY,
                 schema = Schema(implementation = String::class),
                 example = "검색어"
             ),
             Parameter(
-                description = "카테고리 아이디",
-                name = "category_id",
-                `in` = ParameterIn.QUERY,
-                schema = Schema(implementation = String::class),
-                example = "5315d045f031424a8ca53128f344ac04"
-            ),
-            Parameter(
-                description = "배너 여부",
-                name = "is_banner",
-                `in` = ParameterIn.QUERY,
-                schema = Schema(implementation = Boolean::class),
-                example = "false"
-            ),
-            Parameter(
-                description = "사용 여부",
+                description = "상태",
                 name = "is_show",
                 `in` = ParameterIn.QUERY,
                 schema = Schema(implementation = Boolean::class),
                 example = "true"
             ),
             Parameter(
-                description = "상태(카테고리)",
-                name = "is_use",
-                `in` = ParameterIn.QUERY,
-                schema = Schema(implementation = Boolean::class),
-                example = "true"
-            ),
-            Parameter(
-                description = "정렬 타겟",
-                name = "sort_by",
-                `in` = ParameterIn.QUERY,
-                schema = Schema(implementation = SortBy::class),
-                example = "SCREEN_DATE"
-            ),
-            Parameter(
-                description = "정렬 방향",
-                name = "sort_direction",
-                `in` = ParameterIn.QUERY,
-                schema = Schema(implementation = SortDirection::class),
-                example = "ASC"
-            ),
-            Parameter(
-                description = "검색 시작일",
+                description = "등록기간(시작일)",
                 name = "start_date",
                 `in` = ParameterIn.QUERY,
                 schema = Schema(implementation = LocalDate::class),
                 example = "2022-12-31"
             ),
             Parameter(
-                description = "검색 종료일",
+                description = "등록기간(종료일)",
                 name = "end_date",
                 `in` = ParameterIn.QUERY,
                 schema = Schema(implementation = LocalDate::class),

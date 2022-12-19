@@ -16,14 +16,14 @@ import com.bithumbsystems.cms.persistence.mongo.repository.CmsCustomRepository
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsNoticeCategoryRepository
 import com.bithumbsystems.cms.persistence.redis.entity.RedisNoticeCategory
 import com.bithumbsystems.cms.persistence.redis.repository.RedisRepository
+import com.fasterxml.jackson.core.type.TypeReference
 import com.github.michaelbull.result.Result
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Sort
+import org.springframework.data.domain.Pageable
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -49,39 +49,67 @@ class NoticeCategoryService(
 
         noticeCategoryRepository.save(entity).toResponse().also {
             if (it.isUse) {
-                redisRepository.addRListValue(listKey = CMS_NOTICE_CATEGORY, value = entity.toRedisEntity(), clazz = RedisNoticeCategory::class.java)
+                applyToRedis()
             }
         }
+    }
+
+    private suspend fun applyToRedis() {
+        noticeCustomRepository.findAllByCriteria(
+            criteria = Criteria.where("is_delete").`is`(false),
+            pageable = Pageable.unpaged(),
+            sort = buildSort()
+        )
+            .map { response -> response.toRedisEntity() }
+            .toList().also { totalList ->
+                redisRepository.addOrUpdateRBucket(
+                    bucketKey = CMS_NOTICE_CATEGORY,
+                    value = totalList,
+                    typeReference = object : TypeReference<List<RedisNoticeCategory>>() {}
+                )
+            }
     }
 
     /**
      * 공지사항 카테고리 목록을 조회한다.
      * @param searchParams 검색 조건
      */
-    suspend fun getCategories(searchParams: SearchParams): Result<PageResponse<NoticeCategoryResponse>?, ErrorData> = executeIn {
+    suspend fun getCategories(searchParams: SearchParams): Result<ListResponse<NoticeCategoryResponse>?, ErrorData> = executeIn {
         coroutineScope {
             val criteria: Criteria = searchParams.buildCriteria(isFixTop = null, isDelete = false)
-            val sort: Sort = searchParams.buildSort()
-            val count: Deferred<Long> = async {
-                noticeCustomRepository.countAllByCriteria(criteria)
-            }
-            val countPerPage: Int = searchParams.pageSize!!
 
             val categories: Deferred<List<NoticeCategoryResponse>> = async {
                 noticeCustomRepository.findAllByCriteria(
                     criteria = criteria,
-                    pageable = PageRequest.of(searchParams.page!!, countPerPage),
-                    sort = sort
+                    pageable = Pageable.unpaged(),
+                    sort = buildSort()
                 )
                     .map { it.toMaskingResponse() }
                     .toList()
             }
 
-            PageResponse(
+            ListResponse(
                 contents = categories.await(),
-                totalCounts = count.await(),
-                currentPage = searchParams.page!!,
-                pageSize = countPerPage
+                totalCounts = categories.await().size.toLong()
+            )
+        }
+    }
+
+    suspend fun getCategories(): Result<ListResponse<CategoryResponse>?, ErrorData> = executeIn {
+        coroutineScope {
+            val categories: Deferred<List<CategoryResponse>> = async {
+                noticeCustomRepository.findAllByCriteria(
+                    criteria = SearchParams(isUse = true).buildCriteria(isFixTop = null, isDelete = false),
+                    pageable = Pageable.unpaged(),
+                    sort = buildSort()
+                )
+                    .map { it.toCategoryMaskingResponse() }
+                    .toList()
+            }
+
+            ListResponse(
+                contents = categories.await(),
+                totalCounts = categories.await().size.toLong()
             )
         }
     }
@@ -106,39 +134,11 @@ class NoticeCategoryService(
             val category: CmsNoticeCategory? = getCategory(id).component1()?.toEntity()
             category?.let {
                 category.setUpdateInfo(request = request, account = account)
-                noticeCategoryRepository.save(category).toResponse().also { response ->
-                    takeIf { !response.isUse }?.deleteRedisCategory(response) ?: takeIf {
-                        redisRepository.getRListValueById(
-                            listKey = CMS_NOTICE_CATEGORY,
-                            id = response.id,
-                            clazz = RedisNoticeCategory::class.java
-                        ) != null
-                    }?.updateRedisCategory(response, category) ?: createRedisCategory(category)
+                noticeCategoryRepository.save(category).toResponse().also {
+                    applyToRedis()
                 }
             }
         }
-
-    private suspend fun createRedisCategory(
-        category: CmsNoticeCategory
-    ) {
-        redisRepository.addRListValue(listKey = CMS_NOTICE_CATEGORY, value = category.toRedisEntity(), clazz = RedisNoticeCategory::class.java)
-    }
-
-    private suspend fun updateRedisCategory(
-        response: NoticeCategoryDetailResponse,
-        category: CmsNoticeCategory
-    ) {
-        redisRepository.updateRListValueById( // false 에서 true로 가는데 없으면 등록해야한다
-            listKey = CMS_NOTICE_CATEGORY,
-            id = response.id,
-            updateValue = category.toRedisEntity(),
-            clazz = RedisNoticeCategory::class.java
-        )
-    }
-
-    private suspend fun deleteRedisCategory(response: NoticeCategoryDetailResponse) {
-        redisRepository.deleteRListValue(listKey = CMS_NOTICE_CATEGORY, id = response.id, clazz = RedisNoticeCategory::class.java)
-    }
 
     /**
      * 카테고리 삭제
@@ -153,8 +153,8 @@ class NoticeCategoryService(
                 it.isDelete = true
                 it.setUpdateInfo(account)
 
-                noticeCategoryRepository.save(it).also { entity ->
-                    redisRepository.deleteRListValue(listKey = CMS_NOTICE_CATEGORY, id = entity.id, clazz = RedisNoticeCategory::class.java)
+                noticeCategoryRepository.save(it).also {
+                    applyToRedis()
                 }.toResponse()
             }
         }

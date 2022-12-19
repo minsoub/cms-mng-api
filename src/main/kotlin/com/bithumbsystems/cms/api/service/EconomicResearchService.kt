@@ -15,7 +15,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
-import org.springframework.data.domain.PageRequest
+import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.stereotype.Service
@@ -48,19 +48,15 @@ class EconomicResearchService(
         }
     )
 
-    suspend fun getEconomicResearches(searchParams: SearchParams): Result<PageResponse<EconomicResearchResponse>?, ErrorData> = executeIn {
+    suspend fun getEconomicResearches(searchParams: SearchParams): Result<ListResponse<EconomicResearchResponse>?, ErrorData> = executeIn {
         coroutineScope {
             val criteria: Criteria = searchParams.buildCriteria(isFixTop = null, isDelete = false)
             val sort: Sort = searchParams.buildSort()
-            val count: Deferred<Long> = async {
-                economicResearchCustomRepository.countAllByCriteria(criteria)
-            }
-            val countPerPage: Int = searchParams.pageSize!!
 
             val economicResearches: Deferred<List<EconomicResearchResponse>> = async {
                 economicResearchCustomRepository.findAllByCriteria(
                     criteria = criteria,
-                    pageable = PageRequest.of(searchParams.page!!, countPerPage),
+                    pageable = Pageable.unpaged(),
                     sort = sort
                 )
                     .map { it.toMaskingResponse() }
@@ -69,11 +65,9 @@ class EconomicResearchService(
 
             // todo 로직들 반영
 
-            PageResponse(
+            ListResponse(
                 contents = economicResearches.await(),
-                totalCounts = count.await(),
-                currentPage = searchParams.page!!,
-                pageSize = countPerPage
+                totalCounts = economicResearches.await().size.toLong()
             )
         }
     }

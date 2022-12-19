@@ -34,10 +34,10 @@ open class CommonBoardRequest {
     @field:Size(max = 10)
     var shareButtonName: String? = null
 
-    @Schema(description = "예약 게시 여부", allowableValues = ["true", "false"], defaultValue = "false")
+    @Schema(description = "게시 예약 여부", allowableValues = ["true", "false"], defaultValue = "false")
     var isSchedule: Boolean = false
 
-    @Schema(description = "예약 게시일시", example = "2023-01-13 17:09:11")
+    @Schema(description = "게시 예약 일시", example = "2023-01-13 17:09:11")
     @field:Future
     var scheduleDate: LocalDateTime? = null
 
@@ -47,10 +47,10 @@ open class CommonBoardRequest {
     @Schema(description = "조회수", example = "0", required = false)
     var readCount: Long = 0
 
-    @Schema(description = "날짜 업데이트 여부", allowableValues = ["true", "false"], defaultValue = "false")
+    @Schema(description = "날짜 업데이트 여부(등록 일시를 업데이트 일시 기준으로 노출)", allowableValues = ["true", "false"], defaultValue = "false")
     var isUseUpdateDate: Boolean = false
 
-    @Schema(description = "게시물 상단 노출 여부", allowableValues = ["true", "false"], defaultValue = "false")
+    @Schema(description = "게시물 상단 노출 여부(고정을 제외한 목록 최상위로 끌어올린다)", allowableValues = ["true", "false"], defaultValue = "false")
     var isAlignTop: Boolean = false
 
     @Schema(description = "화면 표시용 일시", hidden = true)
