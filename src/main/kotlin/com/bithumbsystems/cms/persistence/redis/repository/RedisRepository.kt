@@ -1,6 +1,7 @@
 package com.bithumbsystems.cms.persistence.redis.repository
 
 import com.bithumbsystems.cms.api.model.enums.RedisKeys
+import com.fasterxml.jackson.core.type.TypeReference
 import com.fasterxml.jackson.databind.ObjectMapper
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.awaitSingleOrNull
@@ -165,26 +166,29 @@ class RedisRepository(
      * 레디스에 버킷 등록 및 수정
      * @param bucketKey 버킷 키
      * @param value 등록 및 수정할 데이터
-     * @param clazz 등록 및 수정할 데이터의 클래스
+     * @param typeReference 등록 및 수정할 데이터의 TypeReference, example = object : TypeReference<List<TestData>>() {}
      */
-    suspend fun <T> addOrUpdateRBucket(bucketKey: RedisKeys, value: T, clazz: Class<T>): Void? =
-        getRBucket(bucketKey, clazz).set(value).awaitSingleOrNull()
+    suspend fun <T> addOrUpdateRBucket(bucketKey: RedisKeys, value: T, typeReference: TypeReference<T>): Void? =
+        getRBucket(bucketKey, typeReference).set(value).awaitSingleOrNull()
 
     /**
      * 레디스에서 버킷 조회
      * @param bucketKey 버킷 키
-     * @param clazz 조회할 데이터의 클래스
+     * @param typeReference 조회할 데이터의 TypeReference, example = object : TypeReference<List<TestData>>() {}
      */
-    suspend fun <T> getRBucket(bucketKey: RedisKeys, clazz: Class<T>): RBucketReactive<T> =
-        redissonReactiveClient.getBucket(bucketKey.name, TypedJsonJacksonCodec(clazz, objectMapper))
+    suspend fun <T> getRBucket(bucketKey: RedisKeys, typeReference: TypeReference<T>): RBucketReactive<T> =
+        redissonReactiveClient.getBucket(
+            bucketKey.name,
+            TypedJsonJacksonCodec(typeReference, objectMapper)
+        )
 
     /**
      * 레디스에서 버킷 삭제
      * @param bucketKey 버킷 키
-     * @param clazz 삭제할 데이터의 클래스
+     * @param typeReference 삭제할 데이터의 TypeReference, example = object : TypeReference<List<TestData>>() {}
      */
-    suspend fun <T> deleteRBucket(bucketKey: RedisKeys, clazz: Class<T>): Boolean? =
-        getRBucket(bucketKey, clazz).delete().awaitSingleOrNull()
+    suspend fun <T> deleteRBucket(bucketKey: RedisKeys, typeReference: TypeReference<T>): Boolean? =
+        getRBucket(bucketKey, typeReference).delete().awaitSingleOrNull()
 
     private suspend fun <T> getIndexAndRListById(
         listKey: RedisKeys,

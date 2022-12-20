@@ -1,6 +1,8 @@
 package com.bithumbsystems.cms.api.model.response
 
+import com.bithumbsystems.cms.api.model.aggregate.Category
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsNotice
+import com.bithumbsystems.cms.persistence.redis.entity.RedisNotice
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
@@ -8,8 +10,8 @@ import java.time.LocalDateTime
 data class NoticeDetailResponse(
     @Schema(description = "아이디", example = "b40f760a9ce84702905347b1e0d98aeb")
     val id: String,
-    @Schema(description = "카테고리명") // todo 이건 어떻게 줄 지 논의
-    val categoryId: List<String>,
+    @Schema(description = "카테고리명")
+    val categoryName: List<Category>,
     @Schema(description = "제목", example = "제목")
     val title: String,
     @Schema(description = "본문", example = "본문")
@@ -60,37 +62,12 @@ data class NoticeDetailResponse(
     val updateDate: LocalDateTime? = null
 )
 
-fun NoticeDetailResponse.toEntity(): CmsNotice {
-    val entity = CmsNotice(
-        id = id,
-        categoryId = categoryId,
-        title = title,
-        content = content,
-        createAccountId = createAccountId,
-        createAccountEmail = createAccountEmail,
-        createDate = createDate
-    )
-    entity.isFixTop = isFixTop
-    entity.isShow = isShow
-    entity.isDelete = isDelete
-    entity.isBanner = isBanner
-    entity.fileId = fileId
-    entity.shareTitle = shareTitle
-    entity.shareDescription = shareDescription
-    entity.shareFileId = shareFileId
-    entity.shareButtonName = shareButtonName
-    entity.isSchedule = isSchedule
-    entity.scheduleDate = scheduleDate
-    entity.isDraft = isDraft
-    entity.readCount = readCount
-    entity.isUseUpdateDate = isUseUpdateDate
-    entity.isAlignTop = isAlignTop
-    entity.screenDate = screenDate
-    entity.updateAccountId = updateAccountId
-    entity.updateAccountEmail = updateAccountEmail
-    entity.updateDate = updateDate
-    return entity
-}
+fun NoticeDetailResponse.toRedisEntity(): RedisNotice = RedisNotice(
+    id = id,
+    title = title,
+    categoryName = categoryName.map { it.name }.toList(),
+    screenDate = screenDate ?: createDate
+)
 
 /**
  * CmsNotice Entity를 NoticeCategoryDetailResponse 변환한다.
@@ -98,7 +75,7 @@ fun NoticeDetailResponse.toEntity(): CmsNotice {
  */
 fun CmsNotice.toResponse() = NoticeDetailResponse(
     id = id,
-    categoryId = categoryId,
+    categoryName = categoryName,
     title = title,
     content = content,
     isFixTop = isFixTop,
@@ -119,7 +96,7 @@ fun CmsNotice.toResponse() = NoticeDetailResponse(
     screenDate = screenDate,
     createAccountId = createAccountId,
     createAccountEmail = createAccountEmail,
-    createDate = createDate,
+    createDate = if (isUseUpdateDate) screenDate ?: createDate else createDate,
     updateAccountId = updateAccountId,
     updateAccountEmail = updateAccountEmail,
     updateDate = updateDate

@@ -56,7 +56,7 @@ class NoticeControllerTest @Autowired constructor(
     @Order(3)
     fun `카테고리 조회 테스트`() {
         val responseBody: Response<*>? = client.get()
-            .uri("/api/v1/mng/cms/notices/categories/$id}")
+            .uri("/api/v1/mng/cms/notices/categories/$id")
             .exchange()
             .expectStatus().isOk
             .expectBody(Response::class.java)
@@ -72,7 +72,7 @@ class NoticeControllerTest @Autowired constructor(
         val body = NoticeCategoryRequest(name = "카테고리", isUse = true, isDelete = true)
 
         val responseBody: Response<*>? = client.put()
-            .uri("/api/v1/mng/cms/notices/categories/$id}")
+            .uri("/api/v1/mng/cms/notices/categories/$id")
             .header("authorization", "Bearer $token")
             .body(Mono.just(body), NoticeCategoryRequest::class.java)
             .exchange()
@@ -88,7 +88,7 @@ class NoticeControllerTest @Autowired constructor(
     @Order(5)
     fun `카테고리 삭제 테스트`() {
         val responseBody: Response<*>? = client.delete()
-            .uri("/api/v1/mng/cms/notices/categories/$id}")
+            .uri("/api/v1/mng/cms/notices/categories/$id")
             .header("authorization", "Bearer $token")
             .exchange()
             .expectStatus().isOk
@@ -108,7 +108,7 @@ class NoticeControllerTest @Autowired constructor(
         }
 
         val responseBody: Response<*>? = client.post()
-            .uri("/api/v1/mng/cms/press-releases")
+            .uri("/api/v1/mng/cms/notices")
             .header("authorization", "Bearer $token")
             .contentType(MediaType.MULTIPART_FORM_DATA)
             .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
@@ -126,7 +126,8 @@ class NoticeControllerTest @Autowired constructor(
     @Order(7)
     fun `공지사항 목록 조회 테스트`() {
         val responseBody: Response<*>? = client.get()
-            .uri("/api/v1/mng/cms/press-releases")
+            .uri("/api/v1/mng/cms/notices")
+            .header("authorization", "Bearer $token")
             .exchange()
             .expectStatus().isOk
             .expectBody(Response::class.java)
@@ -141,7 +142,7 @@ class NoticeControllerTest @Autowired constructor(
     @Order(8)
     fun `공지사항 조회 테스트`() {
         val responseBody: Response<*>? = client.get()
-            .uri("/api/v1/mng/cms/press-releases/$id}")
+            .uri("/api/v1/mng/cms/notices/$id")
             .exchange()
             .expectStatus().isOk
             .expectBody(Response::class.java)
@@ -160,7 +161,7 @@ class NoticeControllerTest @Autowired constructor(
         }
 
         val responseBody: Response<*>? = client.put()
-            .uri("/api/v1/mng/cms/press-releases/$id}")
+            .uri("/api/v1/mng/cms/notices/$id")
             .header("authorization", "Bearer $token")
             .contentType(MediaType.MULTIPART_FORM_DATA)
             .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
@@ -177,7 +178,37 @@ class NoticeControllerTest @Autowired constructor(
     @Order(10)
     fun `공지사항 삭제 테스트`() {
         val responseBody: Response<*>? = client.delete()
-            .uri("/api/v1/mng/cms/press-releases/$id}")
+            .uri("/api/v1/mng/cms/notices/$id")
+            .header("authorization", "Bearer $token")
+            .exchange()
+            .expectStatus().isOk
+            .expectBody(Response::class.java)
+            .returnResult().responseBody
+
+        println(responseBody)
+        responseBody?.result `should be` ResponseCode.SUCCESS
+    }
+
+    @Test
+    @Order(11)
+    fun `공지사항 배너 등록 테스트`() {
+        val responseBody: Response<*>? = client.post()
+            .uri("/api/v1/mng/cms/notices/$id/banners")
+            .header("authorization", "Bearer $token")
+            .exchange()
+            .expectStatus().isOk
+            .expectBody(Response::class.java)
+            .returnResult().responseBody
+
+        println(responseBody)
+        responseBody?.result `should be` ResponseCode.SUCCESS
+    }
+
+    @Test
+    @Order(12)
+    fun `공지사항 배너 삭제 테스트`() {
+        val responseBody: Response<*>? = client.delete()
+            .uri("/api/v1/mng/cms/notices/$id/banners")
             .header("authorization", "Bearer $token")
             .exchange()
             .expectStatus().isOk

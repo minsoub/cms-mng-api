@@ -7,22 +7,55 @@ import com.bithumbsystems.cms.api.util.NullUtil.letIfAllNotNull
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.domain.Sort.Direction
+import org.springframework.data.mongodb.core.aggregation.Aggregation
+import org.springframework.data.mongodb.core.aggregation.AggregationOperation
+import org.springframework.data.mongodb.core.aggregation.LookupOperation
+import org.springframework.data.mongodb.core.aggregation.MatchOperation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
 
 object QueryUtil {
     private fun makeRegex(searchText: String): String = ".*$searchText.*"
+    private const val MAX_FIX_SIZE = 15L
 
     /**
      * 검색 Criteria 생성
      * @param isFixTop 상단 고정 여부
      */
     fun SearchParams.buildCriteria(isFixTop: Boolean?, isDelete: Boolean? = false): Criteria {
-        var orCriteriaList = listOf<Criteria>()
-        val andCriteriaList = arrayListOf<Criteria>()
+        var orCriteriaList: List<Criteria> = listOf()
+        val andCriteriaList: ArrayList<Criteria> = arrayListOf()
 
+        orCriteriaList = buildCriteriaList(orCriteriaList, andCriteriaList, isFixTop, isDelete)
+
+        return when {
+            orCriteriaList.isEmpty() && andCriteriaList.isEmpty() -> {
+                Criteria()
+            }
+
+            orCriteriaList.isEmpty() -> {
+                Criteria().andOperator(andCriteriaList)
+            }
+
+            andCriteriaList.isEmpty() -> {
+                Criteria().orOperator(orCriteriaList)
+            }
+
+            else -> {
+                Criteria().orOperator(orCriteriaList).andOperator(andCriteriaList)
+            }
+        }
+    }
+
+    private fun SearchParams.buildCriteriaList(
+        orCriteriaList: List<Criteria>,
+        andCriteriaList: ArrayList<Criteria>,
+        isFixTop: Boolean?,
+        isDelete: Boolean?
+    ): List<Criteria> {
+        var criteriaList = orCriteriaList
         query?.let {
-            orCriteriaList = listOf(
+            criteriaList = listOf(
                 Criteria.where("title").regex(makeRegex(query!!)),
                 Criteria.where("content").regex(makeRegex(query!!)),
                 Criteria.where("name").regex(makeRegex(query!!))
@@ -45,6 +78,10 @@ object QueryUtil {
             andCriteriaList.add(Criteria.where("category_id").`in`(categoryId))
         }
 
+        eventType?.let {
+            andCriteriaList.add(Criteria.where("event_type").`is`(eventType))
+        }
+
         letIfAllNotNull(startDate, endDate) {
             andCriteriaList.add(Criteria.where("create_date").gte(startDate!!))
             andCriteriaList.add(Criteria.where("create_date").lte(endDate!!))
@@ -57,24 +94,11 @@ object QueryUtil {
         isDelete?.let {
             andCriteriaList.add(Criteria.where("is_delete").`is`(isDelete))
         }
+        return criteriaList
+    }
 
-        return when {
-            orCriteriaList.isEmpty() && andCriteriaList.isEmpty() -> {
-                Criteria()
-            }
-
-            orCriteriaList.isEmpty() -> {
-                Criteria().andOperator(andCriteriaList)
-            }
-
-            andCriteriaList.isEmpty() -> {
-                Criteria().orOperator(orCriteriaList)
-            }
-
-            else -> {
-                Criteria().orOperator(orCriteriaList).andOperator(andCriteriaList)
-            }
-        }
+    fun buildCriteriaForDraft(id: String): Criteria {
+        return Criteria.where("is_draft").`is`(true).and("create_account_id").`is`(id).and("is_delete").`is`(false).and("is_fix_top").`is`(false)
     }
 
     /**
@@ -97,8 +121,12 @@ object QueryUtil {
         return Sort.by(Direction.fromString(sortDirection.toString()), sortBy.value)
     }
 
-    fun buildSortForFix(): Sort {
+    fun buildSort(): Sort {
         return Sort.by(Direction.DESC, "screen_date", "create_date")
+    }
+
+    fun buildSortForDraft(): Sort {
+        return Sort.by(Direction.DESC, "is_draft", "screen_date", "create_date")
     }
 
     /**
@@ -114,4 +142,38 @@ object QueryUtil {
             Query.query(criteria).with(pageable).with(sort)
         }
     }
+
+    fun buildFixAggregation(lookUpOperation: LookupOperation?): Aggregation {
+        val matchOperation: MatchOperation = Aggregation.match(
+            Criteria.where("is_fix_top").`is`(true).andOperator(Criteria.where("is_delete").`is`(false))
+        )
+        return if (lookUpOperation == null) {
+            Aggregation.newAggregation(
+                matchOperation,
+                Aggregation.sort(buildSort()),
+                Aggregation.limit(MAX_FIX_SIZE)
+            )
+        } else {
+            Aggregation.newAggregation(
+                lookUpOperation,
+                matchOperation,
+                Aggregation.sort(buildSort()),
+                Aggregation.limit(MAX_FIX_SIZE)
+            )
+        }
+    }
+
+    fun buildAggregation(lookupOperation: LookupOperation, criteria: Criteria, pageable: Pageable, sort: Sort?): Aggregation {
+        val aggregation: List<AggregationOperation> = listOf(lookupOperation, Aggregation.match(criteria))
+        sort?.let {
+            aggregation.plus(Aggregation.sort(it))
+        }
+        if (pageable.isPaged) {
+            aggregation.plus(Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()))
+            aggregation.plus(Aggregation.limit(pageable.pageSize.toLong()))
+        }
+        return Aggregation.newAggregation(aggregation)
+    }
 }
+
+fun Criteria.withoutDraft(): Criteria = this.and("is_draft").`is`(false)

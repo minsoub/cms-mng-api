@@ -1,6 +1,7 @@
 package com.bithumbsystems.cms.persistence.mongo.entity
 
 import com.bithumbsystems.cms.api.config.resolver.Account
+import com.bithumbsystems.cms.api.model.aggregate.Category
 import com.bithumbsystems.cms.api.model.constants.ShareConstants.NOTICE_TITLE
 import com.bithumbsystems.cms.api.model.request.NoticeRequest
 import com.bithumbsystems.cms.persistence.redis.entity.RedisNotice
@@ -39,6 +40,7 @@ class CmsNotice(
     var updateAccountId: String? = null
     var updateAccountEmail: String? = null
     var updateDate: LocalDateTime? = null
+    var categoryName: List<Category> = listOf()
 }
 
 fun CmsNotice.setUpdateInfo(account: Account) {
@@ -75,5 +77,6 @@ fun CmsNotice.setUpdateInfo(request: NoticeRequest, account: Account) {
 fun CmsNotice.toRedisEntity(): RedisNotice = RedisNotice(
     id = id,
     title = title,
+    categoryName = categoryName.map { it.name }.toList(),
     screenDate = screenDate ?: createDate
 )

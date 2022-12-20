@@ -5,21 +5,18 @@ import com.bithumbsystems.cms.api.model.enums.RedisKeys.*
 import com.bithumbsystems.cms.api.model.request.NoticeCategoryRequest
 import com.bithumbsystems.cms.api.model.request.SearchParams
 import com.bithumbsystems.cms.api.model.request.toEntity
-import com.bithumbsystems.cms.api.model.response.ErrorData
-import com.bithumbsystems.cms.api.model.response.NoticeCategoryDetailResponse
-import com.bithumbsystems.cms.api.model.response.NoticeCategoryResponse
-import com.bithumbsystems.cms.api.model.response.PageResponse
+import com.bithumbsystems.cms.api.model.response.*
 import com.bithumbsystems.cms.api.util.QueryUtil.buildCriteria
 import com.bithumbsystems.cms.api.util.QueryUtil.buildSort
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsNoticeCategory
 import com.bithumbsystems.cms.persistence.mongo.entity.setUpdateInfo
-import com.bithumbsystems.cms.persistence.mongo.entity.toRedisEntity
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsCustomRepository
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsNoticeCategoryRepository
 import com.bithumbsystems.cms.persistence.redis.entity.RedisNoticeCategory
 import com.bithumbsystems.cms.persistence.redis.repository.RedisRepository
 import com.github.michaelbull.result.Result
 import io.mockk.coEvery
+import io.mockk.coJustRun
 import io.mockk.mockk
 import io.mockk.spyk
 import kotlinx.coroutines.ExperimentalCoroutinesApi
@@ -77,9 +74,16 @@ class NoticeCategoryServiceTest {
         } returns entity
 
         coEvery {
-            redisRepository.addRListValue(CMS_NOTICE_CATEGORY, any(), RedisNoticeCategory::class.java)
-        } returns true
+            noticeCustomRepository.findAllByCriteria(any(), any(), any())
+        } returns flowOf(entity)
 
+        coJustRun {
+            redisRepository.addOrUpdateRBucket<RedisNoticeCategory>(
+                bucketKey = CMS_NOTICE_CATEGORY,
+                value = any(),
+                typeReference = any()
+            )
+        }
         val result: Result<NoticeCategoryDetailResponse?, ErrorData> = noticeCategoryService.createCategory(request, account)
 
         result.component1()?.id `should be equal to` entity.id
@@ -101,7 +105,7 @@ class NoticeCategoryServiceTest {
             searchParams.page?.let { PageRequest.of(it, 1) }?.let { noticeCustomRepository.findAllByCriteria(criteria, it, sort) }
         } returns flowOf(NoticeCategoryRequest(name = randomUUID, isUse = false).toEntity())
 
-        val result: Result<PageResponse<NoticeCategoryResponse>?, ErrorData> = noticeCategoryService.getCategories(searchParams)
+        val result: Result<ListResponse<NoticeCategoryResponse>?, ErrorData> = noticeCategoryService.getCategories(searchParams)
 
         result.component1()?.contents!![0].name `should be equal to` randomUUID
     }
@@ -138,13 +142,13 @@ class NoticeCategoryServiceTest {
             noticeCategoryRepository.save(any())
         } returns entity
 
-        coEvery {
-            redisRepository.updateRListValueById(CMS_NOTICE_CATEGORY, entity.id, any(), RedisNoticeCategory::class.java)
-        } returns true
-
-        coEvery {
-            redisRepository.deleteRListValue(CMS_NOTICE_CATEGORY, entity.id, RedisNoticeCategory::class.java)
-        } returns entity.toRedisEntity()
+        coJustRun {
+            redisRepository.addOrUpdateRBucket<RedisNoticeCategory>(
+                bucketKey = CMS_NOTICE_CATEGORY,
+                value = any(),
+                typeReference = any()
+            )
+        }
 
         val result: Result<NoticeCategoryDetailResponse?, ErrorData> = noticeCategoryService.updateCategory(entity.id, request, account)
 
@@ -169,12 +173,16 @@ class NoticeCategoryServiceTest {
         } returns entity
 
         coEvery {
-            redisRepository.updateRListValueById(CMS_NOTICE_CATEGORY, entity.id, any(), RedisNoticeCategory::class.java)
-        } returns true
+            noticeCustomRepository.findAllByCriteria(any(), any(), any())
+        } returns flowOf(entity)
 
-        coEvery {
-            redisRepository.deleteRListValue(CMS_NOTICE_CATEGORY, entity.id, RedisNoticeCategory::class.java)
-        } returns entity.toRedisEntity()
+        coJustRun {
+            redisRepository.addOrUpdateRBucket<RedisNoticeCategory>(
+                bucketKey = CMS_NOTICE_CATEGORY,
+                value = any(),
+                typeReference = any()
+            )
+        }
 
         val result: Result<NoticeCategoryDetailResponse?, ErrorData> = noticeCategoryService.updateCategory(entity.id, request, account)
 
@@ -202,9 +210,13 @@ class NoticeCategoryServiceTest {
             noticeCategoryRepository.save(any())
         } returns entity
 
-        coEvery {
-            redisRepository.deleteRListValue(CMS_NOTICE_CATEGORY, entity.id, RedisNoticeCategory::class.java)
-        } returns entity.toRedisEntity()
+        coJustRun {
+            redisRepository.addOrUpdateRBucket<RedisNoticeCategory>(
+                bucketKey = CMS_NOTICE_CATEGORY,
+                value = any(),
+                typeReference = any()
+            )
+        }
 
         val result: Result<NoticeCategoryDetailResponse?, ErrorData> = noticeCategoryService.deleteCategory(entity.id, account)
 

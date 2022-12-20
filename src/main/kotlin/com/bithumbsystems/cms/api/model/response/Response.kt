@@ -12,16 +12,12 @@ data class Response<out T>(
     val data: T? = null
 )
 
-@Schema(description = "페이지 응답 객체")
-data class PageResponse<out T>(
+@Schema(description = "목록 응답 객체")
+data class ListResponse<out T>(
     @Schema(description = "목록")
     val contents: List<T>,
     @Schema(description = "총 갯수")
-    val totalCounts: Long,
-    @Schema(description = "현재 페이지")
-    val currentPage: Int,
-    @Schema(description = "페이지 사이즈")
-    val pageSize: Int
+    val totalCounts: Long
 )
 
 @Schema(description = "에러 응답")

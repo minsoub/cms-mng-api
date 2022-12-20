@@ -12,4 +12,8 @@ interface CmsCustomRepository<T> {
     suspend fun countAllByCriteria(criteria: Criteria): Long
 
     fun findAllByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<T>
+
+    suspend fun findById(id: String): T?
+
+    fun getFixItems(): Flow<T>
 }
