@@ -15,11 +15,11 @@ import javax.validation.constraints.Size
 class EventRequest(
     @Schema(description = "제목", example = "제목", required = true, maxLength = 100)
     @field:Size(max = 100)
-    val title: String,
+    override val title: String,
     @Schema(description = "본문", example = "본문", required = true)
     @field:NotBlank
-    val content: String
-) : CommonBoardRequest() {
+    override val content: String
+) : CommonBoardRequest(title = title, content = content) {
     @Schema(description = "이벤트 유형", allowableValues = ["DEFAULT", "PARTICIPATION", "LINK"])
     var type: EventType = EventType.DEFAULT
 
@@ -106,10 +106,9 @@ fun EventRequest.toEntity(): CmsEvent {
     return entity
 }
 
-fun EventRequest.validate(): Boolean {
+fun EventRequest.validateEvent(): Boolean {
     return when {
-        title.length > 100 || content.isBlank() || (shareTitle?.length ?: 0) > 50 || (shareDescription?.length ?: 0) > 100 ||
-            (shareButtonName?.length ?: 0) > 10 || (scheduleDate?.isBefore(LocalDateTime.now()) == true) || isValid -> {
+        isValid -> {
             false
         }
 

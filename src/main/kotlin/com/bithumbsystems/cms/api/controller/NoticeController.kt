@@ -215,13 +215,13 @@ class NoticeController(
 
     @PostMapping("/{id}/banners")
     @Operation(
-        summary = "공지사항 배너 등록 또는 삭제",
-        description = "공지사항 배너를 등록 또는 삭제합니다.",
+        summary = "공지사항 배너 등록",
+        description = "공지사항 배너를 등록합니다.",
         tags = ["공지사항 > 공지사항 관리"],
         responses = [
             ApiResponse(
                 responseCode = "200",
-                description = "등록 또는 삭제 성공",
+                description = "등록 성공",
                 content = [Content(schema = Schema(implementation = NoticeDetailResponse::class))]
             )
         ]
