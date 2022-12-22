@@ -16,7 +16,6 @@ import org.springframework.data.mongodb.core.query.Query
 
 object QueryUtil {
     private fun makeRegex(searchText: String): String = ".*$searchText.*"
-    private const val MAX_FIX_SIZE = 15L
 
     /**
      * 검색 Criteria 생성
@@ -74,8 +73,8 @@ object QueryUtil {
             andCriteriaList.add(Criteria.where("is_use").`is`(isUse))
         }
 
-        categoryId?.let {
-            andCriteriaList.add(Criteria.where("category_id").`in`(categoryId))
+        categoryIds?.let {
+            andCriteriaList.add(Criteria.where("category_ids").`in`(categoryIds))
         }
 
         eventType?.let {
@@ -98,7 +97,7 @@ object QueryUtil {
     }
 
     fun buildCriteriaForDraft(id: String): Criteria {
-        return Criteria.where("is_draft").`is`(true).and("create_account_id").`is`(id).and("is_delete").`is`(false).and("is_fix_top").`is`(false)
+        return Criteria.where("is_draft").`is`(true).and("create_account_id").`is`(id).and("is_delete").`is`(false)
     }
 
     /**
@@ -150,27 +149,25 @@ object QueryUtil {
         return if (lookUpOperation == null) {
             Aggregation.newAggregation(
                 matchOperation,
-                Aggregation.sort(buildSort()),
-                Aggregation.limit(MAX_FIX_SIZE)
+                Aggregation.sort(buildSort())
             )
         } else {
             Aggregation.newAggregation(
                 lookUpOperation,
                 matchOperation,
-                Aggregation.sort(buildSort()),
-                Aggregation.limit(MAX_FIX_SIZE)
+                Aggregation.sort(buildSort())
             )
         }
     }
 
     fun buildAggregation(lookUpOperation: LookupOperation, criteria: Criteria, pageable: Pageable, sort: Sort?): Aggregation {
-        val aggregation: List<AggregationOperation> = listOf(lookUpOperation, Aggregation.match(criteria))
+        val aggregation: MutableList<AggregationOperation> = mutableListOf(lookUpOperation, Aggregation.match(criteria))
         sort?.let {
-            aggregation.plus(Aggregation.sort(it))
+            aggregation.add(Aggregation.sort(it))
         }
         if (pageable.isPaged) {
-            aggregation.plus(Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()))
-            aggregation.plus(Aggregation.limit(pageable.pageSize.toLong()))
+            aggregation.add(Aggregation.skip((pageable.pageNumber * pageable.pageSize).toLong()))
+            aggregation.add(Aggregation.limit(pageable.pageSize.toLong()))
         }
         return Aggregation.newAggregation(aggregation)
     }

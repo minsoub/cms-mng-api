@@ -48,7 +48,7 @@ fun NoticeCategoryDetailResponse.toEntity(): CmsNoticeCategory {
  * CmsNoticeCategory Entity를 NoticeCategoryDetailResponse 변환한다.
  * @return 마스킹 처리되지 않은 응답
  */
-fun CmsNoticeCategory.toResponse() = NoticeCategoryDetailResponse(
+fun CmsNoticeCategory.toResponse(): NoticeCategoryDetailResponse = NoticeCategoryDetailResponse(
     id = id,
     name = name,
     isUse = isUse,

@@ -10,7 +10,6 @@ import com.bithumbsystems.cms.api.util.QueryUtil.buildCriteria
 import com.bithumbsystems.cms.api.util.QueryUtil.buildSort
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsNoticeCategory
 import com.bithumbsystems.cms.persistence.mongo.entity.setUpdateInfo
-import com.bithumbsystems.cms.persistence.mongo.repository.CmsCustomRepository
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsNoticeCategoryRepository
 import com.bithumbsystems.cms.persistence.redis.entity.RedisNoticeCategory
 import com.bithumbsystems.cms.persistence.redis.repository.RedisRepository
@@ -42,7 +41,6 @@ class NoticeCategoryServiceTest {
 
     private lateinit var noticeCategoryService: NoticeCategoryService
     private lateinit var noticeCategoryRepository: CmsNoticeCategoryRepository
-    private lateinit var noticeCustomRepository: CmsCustomRepository<CmsNoticeCategory>
     private lateinit var redisRepository: RedisRepository
 
     private val randomUUID = UUID.randomUUID().toString().replace("-", "")
@@ -52,10 +50,10 @@ class NoticeCategoryServiceTest {
     @BeforeAll
     fun beforeAll() {
         noticeCategoryRepository = mockk()
-        noticeCustomRepository = mockk()
+        // noticeCustomRepository = mockk()
         redisRepository = mockk()
         noticeCategoryService = spyk(
-            objToCopy = NoticeCategoryService(noticeCategoryRepository, noticeCustomRepository, redisRepository),
+            objToCopy = NoticeCategoryService(noticeCategoryRepository, redisRepository),
             recordPrivateCalls = true
         )
         account = Account(accountId = "id", email = "user@example.com", userIp = "127.0.0.1", roles = setOf("admin"), mySiteId = "siteId")
@@ -74,7 +72,7 @@ class NoticeCategoryServiceTest {
         } returns entity
 
         coEvery {
-            noticeCustomRepository.findAllByCriteria(any(), any(), any())
+            noticeCategoryRepository.findAllByCriteria(any(), any(), any())
         } returns flowOf(entity)
 
         coJustRun {
@@ -98,11 +96,11 @@ class NoticeCategoryServiceTest {
         val sort: Sort = searchParams.buildSort()
 
         coEvery {
-            noticeCustomRepository.countAllByCriteria(criteria)
+            noticeCategoryRepository.countAllByCriteria(criteria)
         } returns 1
 
         coEvery {
-            searchParams.page?.let { PageRequest.of(it, 1) }?.let { noticeCustomRepository.findAllByCriteria(criteria, it, sort) }
+            searchParams.page?.let { PageRequest.of(it, 1) }?.let { noticeCategoryRepository.findAllByCriteria(criteria, it, sort) }
         } returns flowOf(NoticeCategoryRequest(name = randomUUID, isUse = false).toEntity())
 
         val result: Result<ListResponse<NoticeCategoryResponse>?, ErrorData> = noticeCategoryService.getCategories(searchParams)
@@ -173,7 +171,7 @@ class NoticeCategoryServiceTest {
         } returns entity
 
         coEvery {
-            noticeCustomRepository.findAllByCriteria(any(), any(), any())
+            noticeCategoryRepository.findAllByCriteria(any(), any(), any())
         } returns flowOf(entity)
 
         coJustRun {

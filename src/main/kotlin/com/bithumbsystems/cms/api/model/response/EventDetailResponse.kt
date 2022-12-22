@@ -4,6 +4,7 @@ import com.bithumbsystems.cms.api.model.enums.EventTarget
 import com.bithumbsystems.cms.api.model.enums.EventType
 import com.bithumbsystems.cms.api.model.request.Message
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsEvent
+import com.bithumbsystems.cms.persistence.redis.entity.RedisCommon
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
@@ -77,44 +78,11 @@ class EventDetailResponse(
     val updateDate: LocalDateTime? = null
 )
 
-fun EventDetailResponse.toEntity(): CmsEvent {
-    val entity = CmsEvent(
-        id = id,
-        title = title,
-        content = content,
-        createAccountId = createAccountId,
-        createAccountEmail = createAccountEmail,
-        createDate = createDate
-    )
-    entity.isFixTop = isFixTop
-    entity.isShow = isShow
-    entity.isDelete = isDelete
-    entity.fileId = fileId
-    entity.shareTitle = shareTitle
-    entity.shareDescription = shareDescription
-    entity.shareFileId = shareFileId
-    entity.shareButtonName = shareButtonName
-    entity.isSchedule = isSchedule
-    entity.scheduleDate = scheduleDate
-    entity.isDraft = isDraft
-    entity.readCount = readCount
-    entity.type = type
-    entity.target = target
-    entity.eventStartDate = eventStartDate
-    entity.eventEndDate = eventEndDate
-    entity.agreementContent = agreementContent
-    entity.buttonName = buttonName
-    entity.buttonColor = buttonColor
-    entity.buttonUrl = buttonUrl
-    entity.message = message
-    entity.isUseUpdateDate = isUseUpdateDate
-    entity.isAlignTop = isAlignTop
-    entity.screenDate = screenDate
-    entity.updateAccountId = updateAccountId
-    entity.updateAccountEmail = updateAccountEmail
-    entity.updateDate = updateDate
-    return entity
-}
+fun EventDetailResponse.toRedisEntity(): RedisCommon = RedisCommon(
+    id = id,
+    title = title,
+    screenDate = screenDate ?: createDate
+)
 
 /**
  * CmsPressRelease Entity를 PressReleaseDetailResponse 변환한다.

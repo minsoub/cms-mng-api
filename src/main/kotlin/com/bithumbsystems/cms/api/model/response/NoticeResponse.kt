@@ -12,7 +12,7 @@ class NoticeResponse(
     @Schema(description = "아이디", example = "b40f760a9ce84702905347b1e0d98aeb")
     val id: String,
     @Schema(description = "카테고리명")
-    val categoryName: List<Category>,
+    val categoryNames: List<Category>,
     @Schema(description = "제목", example = "제목")
     val title: String,
     @Schema(description = "상단 고정 여부", example = "false")
@@ -41,7 +41,7 @@ class NoticeResponse(
  */
 fun CmsNotice.toMaskingResponse() = NoticeResponse(
     id = id,
-    categoryName = categoryName,
+    categoryNames = categoryNames,
     title = title,
     isFixTop = isFixTop,
     isBanner = isBanner,
@@ -54,9 +54,9 @@ fun CmsNotice.toMaskingResponse() = NoticeResponse(
     updateDate = updateDate
 )
 
-fun CmsNotice.toDraftResponse() = NoticeResponse(
+fun CmsNotice.toDraftResponse(): NoticeResponse = NoticeResponse(
     id = id,
-    categoryName = categoryName,
+    categoryNames = categoryNames,
     title = title,
     isFixTop = isFixTop,
     isBanner = null,

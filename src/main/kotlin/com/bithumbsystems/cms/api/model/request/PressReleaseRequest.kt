@@ -38,7 +38,7 @@ fun PressReleaseRequest.toEntity(): CmsPressRelease {
     entity.readCount = readCount
     entity.isUseUpdateDate = isUseUpdateDate
     entity.isAlignTop = isAlignTop
-    entity.screenDate = screenDate
+    entity.screenDate = screenDate ?: entity.createDate
     entity.updateAccountId = updateAccountId
     entity.updateAccountEmail = updateAccountEmail
     entity.updateDate = updateDate

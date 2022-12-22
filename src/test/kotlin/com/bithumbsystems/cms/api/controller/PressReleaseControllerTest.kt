@@ -45,6 +45,7 @@ class PressReleaseControllerTest @Autowired constructor(
     fun `보도자료 목록 조회 테스트`() {
         val responseBody: Response<*>? = client.get()
             .uri("/api/v1/mng/cms/press-releases")
+            .header("authorization", "Bearer $token")
             .exchange()
             .expectStatus().isOk
             .expectBody(Response::class.java)

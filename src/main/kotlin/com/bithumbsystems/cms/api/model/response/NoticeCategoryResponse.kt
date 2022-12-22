@@ -37,7 +37,7 @@ data class CategoryResponse(
  * CmsNoticeCategory Entity를 NoticeCategoryResponse로 변환한다.
  * @return 마스킹 처리된 응답
  */
-fun CmsNoticeCategory.toMaskingResponse() = NoticeCategoryResponse(
+fun CmsNoticeCategory.toMaskingResponse(): NoticeCategoryResponse = NoticeCategoryResponse(
     id = id,
     name = name,
     isUse = isUse,
@@ -47,7 +47,7 @@ fun CmsNoticeCategory.toMaskingResponse() = NoticeCategoryResponse(
     updateDate = updateDate
 )
 
-fun CmsNoticeCategory.toCategoryMaskingResponse() = CategoryResponse(
+fun CmsNoticeCategory.toCategoryMaskingResponse(): CategoryResponse = CategoryResponse(
     id = id,
     name = name,
     createDate = createDate

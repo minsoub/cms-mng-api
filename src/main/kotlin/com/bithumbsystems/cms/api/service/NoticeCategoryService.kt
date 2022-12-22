@@ -12,7 +12,6 @@ import com.bithumbsystems.cms.api.util.QueryUtil.buildSort
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsNoticeCategory
 import com.bithumbsystems.cms.persistence.mongo.entity.setUpdateInfo
 import com.bithumbsystems.cms.persistence.mongo.entity.toRedisEntity
-import com.bithumbsystems.cms.persistence.mongo.repository.CmsCustomRepository
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsNoticeCategoryRepository
 import com.bithumbsystems.cms.persistence.redis.entity.RedisNoticeCategory
 import com.bithumbsystems.cms.persistence.redis.repository.RedisRepository
@@ -31,7 +30,6 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class NoticeCategoryService(
     private val noticeCategoryRepository: CmsNoticeCategoryRepository,
-    private val noticeCustomRepository: CmsCustomRepository<CmsNoticeCategory>,
     private val redisRepository: RedisRepository
 ) {
 
@@ -55,7 +53,7 @@ class NoticeCategoryService(
     }
 
     private suspend fun applyToRedis() {
-        noticeCustomRepository.findAllByCriteria(
+        noticeCategoryRepository.findAllByCriteria(
             criteria = Criteria.where("is_delete").`is`(false),
             pageable = Pageable.unpaged(),
             sort = buildSort()
@@ -79,7 +77,7 @@ class NoticeCategoryService(
             val criteria: Criteria = searchParams.buildCriteria(isFixTop = null, isDelete = false)
 
             val categories: Deferred<List<NoticeCategoryResponse>> = async {
-                noticeCustomRepository.findAllByCriteria(
+                noticeCategoryRepository.findAllByCriteria(
                     criteria = criteria,
                     pageable = Pageable.unpaged(),
                     sort = buildSort()
@@ -98,7 +96,7 @@ class NoticeCategoryService(
     suspend fun getCategories(): Result<ListResponse<CategoryResponse>?, ErrorData> = executeIn {
         coroutineScope {
             val categories: Deferred<List<CategoryResponse>> = async {
-                noticeCustomRepository.findAllByCriteria(
+                noticeCategoryRepository.findAllByCriteria(
                     criteria = SearchParams(isUse = true).buildCriteria(isFixTop = null, isDelete = false),
                     pageable = Pageable.unpaged(),
                     sort = buildSort()

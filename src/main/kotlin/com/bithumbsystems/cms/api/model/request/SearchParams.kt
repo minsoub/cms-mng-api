@@ -18,7 +18,7 @@ data class SearchParams(
     @Parameter(description = "제목/내용")
     var query: String? = null,
     @Parameter(description = "카테고리")
-    var categoryId: String? = null,
+    var categoryIds: String? = null,
     @Parameter(description = "배너 공지")
     var isBanner: Boolean? = null,
     @Parameter(description = "상태")

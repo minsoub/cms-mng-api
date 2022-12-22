@@ -32,7 +32,7 @@ class NoticeControllerTest @Autowired constructor(
             .expectBody(Response::class.java)
             .returnResult().responseBody
 
-        println(responseBody)
+        logger.info(responseBody.toString())
         id = responseBody?.data.toString().substringAfter("=").substringBefore(",")
         responseBody?.result `should be` ResponseCode.SUCCESS
     }
@@ -47,7 +47,7 @@ class NoticeControllerTest @Autowired constructor(
             .expectBody(Response::class.java)
             .returnResult().responseBody
 
-        println(responseBody)
+        logger.info(responseBody.toString())
         responseBody?.result `should be` ResponseCode.SUCCESS
         responseBody?.data?.toString()?.isNotEmpty() `should be` true
     }
@@ -62,7 +62,7 @@ class NoticeControllerTest @Autowired constructor(
             .expectBody(Response::class.java)
             .returnResult().responseBody
 
-        println(responseBody)
+        logger.info(responseBody.toString())
         responseBody?.result `should be` ResponseCode.SUCCESS
     }
 
@@ -80,7 +80,7 @@ class NoticeControllerTest @Autowired constructor(
             .expectBody(Response::class.java)
             .returnResult().responseBody
 
-        println(responseBody)
+        logger.info(responseBody.toString())
         responseBody?.result `should be` ResponseCode.SUCCESS
     }
 
@@ -95,14 +95,14 @@ class NoticeControllerTest @Autowired constructor(
             .expectBody(Response::class.java)
             .returnResult().responseBody
 
-        println(responseBody)
+        logger.info(responseBody.toString())
         responseBody?.result `should be` ResponseCode.SUCCESS
     }
 
     @Test
     @Order(6)
     fun `공지사항 등록 테스트`() {
-        val body = NoticeRequest(title = "제목", content = "본문", categoryId = listOf(UUID.randomUUID().toString().replace("-", "")))
+        val body = NoticeRequest(title = "제목", content = "본문", categoryIds = listOf(UUID.randomUUID().toString().replace("-", "")))
         val bodyBuilder: MultipartBodyBuilder = MultipartBodyBuilder().apply {
             this.asyncPart("request", Mono.just(body), NoticeRequest::class.java)
         }
@@ -117,7 +117,7 @@ class NoticeControllerTest @Autowired constructor(
             .expectBody(Response::class.java)
             .returnResult().responseBody
 
-        println(responseBody)
+        logger.info(responseBody.toString())
         id = responseBody?.data.toString().substringAfter("=").substringBefore(",")
         responseBody?.result `should be` ResponseCode.SUCCESS
     }
@@ -133,7 +133,7 @@ class NoticeControllerTest @Autowired constructor(
             .expectBody(Response::class.java)
             .returnResult().responseBody
 
-        println(responseBody)
+        logger.info(responseBody.toString())
         responseBody?.result `should be` ResponseCode.SUCCESS
         responseBody?.data?.toString()?.isNotEmpty() `should be` true
     }
@@ -148,14 +148,14 @@ class NoticeControllerTest @Autowired constructor(
             .expectBody(Response::class.java)
             .returnResult().responseBody
 
-        println(responseBody)
+        logger.info(responseBody.toString())
         responseBody?.result `should be` ResponseCode.SUCCESS
     }
 
     @Test
     @Order(9)
     fun `공지사항 수정 테스트`() {
-        val body = NoticeRequest(title = "제목2", content = "본문2", categoryId = listOf(UUID.randomUUID().toString().replace("-", "")))
+        val body = NoticeRequest(title = "제목2", content = "본문2", categoryIds = listOf(UUID.randomUUID().toString().replace("-", "")))
         val bodyBuilder: MultipartBodyBuilder = MultipartBodyBuilder().apply {
             this.asyncPart("request", Mono.just(body), NoticeRequest::class.java)
         }
@@ -170,27 +170,12 @@ class NoticeControllerTest @Autowired constructor(
             .expectBody(Response::class.java)
             .returnResult().responseBody
 
-        println(responseBody)
+        logger.info(responseBody.toString())
         responseBody?.result `should be` ResponseCode.SUCCESS
     }
 
     @Test
     @Order(10)
-    fun `공지사항 삭제 테스트`() {
-        val responseBody: Response<*>? = client.delete()
-            .uri("/api/v1/mng/cms/notices/$id")
-            .header("authorization", "Bearer $token")
-            .exchange()
-            .expectStatus().isOk
-            .expectBody(Response::class.java)
-            .returnResult().responseBody
-
-        println(responseBody)
-        responseBody?.result `should be` ResponseCode.SUCCESS
-    }
-
-    @Test
-    @Order(11)
     fun `공지사항 배너 등록 테스트`() {
         val responseBody: Response<*>? = client.post()
             .uri("/api/v1/mng/cms/notices/$id/banners")
@@ -200,12 +185,12 @@ class NoticeControllerTest @Autowired constructor(
             .expectBody(Response::class.java)
             .returnResult().responseBody
 
-        println(responseBody)
+        logger.info(responseBody.toString())
         responseBody?.result `should be` ResponseCode.SUCCESS
     }
 
     @Test
-    @Order(12)
+    @Order(11)
     fun `공지사항 배너 삭제 테스트`() {
         val responseBody: Response<*>? = client.delete()
             .uri("/api/v1/mng/cms/notices/$id/banners")
@@ -215,7 +200,22 @@ class NoticeControllerTest @Autowired constructor(
             .expectBody(Response::class.java)
             .returnResult().responseBody
 
-        println(responseBody)
+        logger.info(responseBody.toString())
+        responseBody?.result `should be` ResponseCode.SUCCESS
+    }
+
+    @Test
+    @Order(12)
+    fun `공지사항 삭제 테스트`() {
+        val responseBody: Response<*>? = client.delete()
+            .uri("/api/v1/mng/cms/notices/$id")
+            .header("authorization", "Bearer $token")
+            .exchange()
+            .expectStatus().isOk
+            .expectBody(Response::class.java)
+            .returnResult().responseBody
+
+        logger.info(responseBody.toString())
         responseBody?.result `should be` ResponseCode.SUCCESS
     }
 }

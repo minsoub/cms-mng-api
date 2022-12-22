@@ -15,19 +15,19 @@ class EventResponse(
     @Schema(description = "상단 고정 여부", example = "false")
     val isFixTop: Boolean = false,
     @Schema(description = "상태(공개 여부)", example = "false")
-    val isShow: Boolean = true,
+    val isShow: Boolean? = true,
     @Schema(description = "초안 여부", example = "false")
     var isDraft: Boolean = false,
     @Schema(description = "조회수", example = "0")
-    var readCount: Long = 0,
+    var readCount: Long? = 0,
     @Schema(description = "이벤트 유형", example = "DEFAULT")
     var type: EventType = EventType.DEFAULT,
     @Schema(description = "참여 대상", example = "LOGIN")
     var screenDate: LocalDateTime? = null,
     @Schema(description = "생성자 이메일", example = "abc@example.com")
-    val createAccountEmail: String,
+    val createAccountEmail: String?,
     @Schema(description = "생성일시, 예시: 2022-12-07 11:11:11", example = "2022-12-07 11:11:11")
-    val createDate: LocalDateTime,
+    val createDate: LocalDateTime?,
     @Schema(description = "수정일시, 예시: 2022-12-07 11:11:11", example = "2022-12-07 11:11:11")
     val updateDate: LocalDateTime? = null
 )
@@ -48,4 +48,17 @@ fun CmsEvent.toMaskingResponse(): EventResponse = EventResponse(
     createAccountEmail = createAccountEmail.getEmailMask(),
     createDate = if (isUseUpdateDate) screenDate ?: createDate else createDate,
     updateDate = updateDate
+)
+
+fun CmsEvent.toDraftResponse(): EventResponse = EventResponse(
+    id = id,
+    title = title,
+    isFixTop = isFixTop,
+    isShow = null,
+    isDraft = isDraft,
+    readCount = null,
+    screenDate = screenDate,
+    createAccountEmail = null,
+    createDate = null,
+    updateDate = null
 )

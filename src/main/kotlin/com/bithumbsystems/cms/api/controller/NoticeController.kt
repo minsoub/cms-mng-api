@@ -91,7 +91,7 @@ class NoticeController(
             ),
             Parameter(
                 description = "카테고리",
-                name = "category_id",
+                name = "category_ids",
                 `in` = ParameterIn.QUERY,
                 schema = Schema(implementation = String::class),
                 example = "5315d045f031424a8ca53128f344ac04"

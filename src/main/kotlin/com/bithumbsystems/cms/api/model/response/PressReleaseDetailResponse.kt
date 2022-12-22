@@ -1,6 +1,7 @@
 package com.bithumbsystems.cms.api.model.response
 
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsPressRelease
+import com.bithumbsystems.cms.persistence.redis.entity.RedisCommon
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
@@ -56,35 +57,11 @@ class PressReleaseDetailResponse(
     val updateDate: LocalDateTime? = null
 )
 
-fun PressReleaseDetailResponse.toEntity(): CmsPressRelease {
-    val entity = CmsPressRelease(
-        id = id,
-        title = title,
-        content = content,
-        createAccountId = createAccountId,
-        createAccountEmail = createAccountEmail,
-        createDate = createDate
-    )
-    entity.isFixTop = isFixTop
-    entity.isShow = isShow
-    entity.isDelete = isDelete
-    entity.fileId = fileId
-    entity.shareTitle = shareTitle
-    entity.shareDescription = shareDescription
-    entity.shareFileId = shareFileId
-    entity.shareButtonName = shareButtonName
-    entity.isSchedule = isSchedule
-    entity.scheduleDate = scheduleDate
-    entity.isDraft = isDraft
-    entity.readCount = readCount
-    entity.isUseUpdateDate = isUseUpdateDate
-    entity.isAlignTop = isAlignTop
-    entity.screenDate = screenDate
-    entity.updateAccountId = updateAccountId
-    entity.updateAccountEmail = updateAccountEmail
-    entity.updateDate = updateDate
-    return entity
-}
+fun PressReleaseDetailResponse.toRedisEntity(): RedisCommon = RedisCommon(
+    id = id,
+    title = title,
+    screenDate = screenDate ?: createDate
+)
 
 /**
  * CmsPressRelease Entity를 PressReleaseDetailResponse 변환한다.
