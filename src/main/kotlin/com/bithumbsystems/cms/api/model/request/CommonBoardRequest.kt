@@ -1,5 +1,6 @@
 package com.bithumbsystems.cms.api.model.request
 
+import com.bithumbsystems.cms.api.config.resolver.Account
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 import javax.validation.constraints.Future
@@ -91,4 +92,9 @@ open class CommonBoardRequest(
             }
         }
     }
+}
+
+fun CommonBoardRequest.setCreateInfo(account: Account) {
+    createAccountEmail = account.email
+    createAccountId = account.accountId
 }

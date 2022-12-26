@@ -1,5 +1,6 @@
 package com.bithumbsystems.cms.api.controller
 
+import com.bithumbsystems.cms.api.util.Logger
 import org.junit.jupiter.api.MethodOrderer
 import org.junit.jupiter.api.TestInstance
 import org.junit.jupiter.api.TestMethodOrder
@@ -13,6 +14,7 @@ import org.springframework.test.context.ActiveProfiles
 @TestInstance(TestInstance.Lifecycle.PER_CLASS)
 @TestMethodOrder(MethodOrderer.OrderAnnotation::class)
 class CommonControllerTest internal constructor() {
+    val logger by Logger()
 
     companion object {
         internal const val token =

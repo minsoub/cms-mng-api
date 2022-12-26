@@ -15,7 +15,7 @@ import java.util.*
 class CmsNotice(
     @MongoId
     val id: String = UUID.randomUUID().toString().replace("-", ""),
-    var categoryId: List<String>,
+    var categoryIds: List<String>,
     var title: String,
     var content: String,
     val createAccountId: String,
@@ -43,7 +43,7 @@ class CmsNotice(
     var updateDate: LocalDateTime? = null
 
     @ReadOnlyProperty
-    var categoryName: List<Category> = listOf()
+    var categoryNames: List<Category> = listOf()
 }
 
 fun CmsNotice.setUpdateInfo(account: Account) {
@@ -53,7 +53,7 @@ fun CmsNotice.setUpdateInfo(account: Account) {
 }
 
 fun CmsNotice.setUpdateInfo(request: NoticeRequest, account: Account) {
-    categoryId = request.categoryId
+    categoryIds = request.categoryIds
     title = request.title
     isFixTop = request.isFixTop
     isShow = request.isShow
@@ -80,6 +80,6 @@ fun CmsNotice.setUpdateInfo(request: NoticeRequest, account: Account) {
 fun CmsNotice.toRedisEntity(): RedisNotice = RedisNotice(
     id = id,
     title = title,
-    categoryName = categoryName.map { it.name }.toList(),
+    categoryNames = categoryNames.map { it.name }.toList(),
     screenDate = screenDate ?: createDate
 )

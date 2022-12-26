@@ -11,7 +11,7 @@ import javax.validation.constraints.Size
 data class NoticeRequest(
     @Schema(description = "카테고리 아이디 목록", example = "[\"5315d045f031424a8ca53128f344ac04\"]", required = true)
     @field:NotEmpty
-    val categoryId: List<String>,
+    val categoryIds: List<String>,
     @Schema(description = "제목", example = "제목", required = true, maxLength = 100)
     @field:Size(max = 100)
     override val title: String,
@@ -25,14 +25,14 @@ data class NoticeRequest(
 
 fun NoticeRequest.toEntity(): CmsNotice {
     val entity = CmsNotice(
-        categoryId = categoryId,
+        categoryIds = categoryIds,
         title = title,
         content = content,
         createAccountId = createAccountId,
         createAccountEmail = createAccountEmail
     )
 
-    entity.categoryId = categoryId
+    entity.categoryIds = categoryIds
     entity.isFixTop = isFixTop
     entity.isBanner = isBanner
     entity.isShow = isShow
@@ -48,7 +48,7 @@ fun NoticeRequest.toEntity(): CmsNotice {
     entity.readCount = readCount
     entity.isUseUpdateDate = isUseUpdateDate
     entity.isAlignTop = isAlignTop
-    entity.screenDate = screenDate
+    entity.screenDate = screenDate ?: entity.createDate
     entity.updateAccountId = updateAccountId
     entity.updateAccountEmail = updateAccountEmail
     entity.updateDate = updateDate
@@ -58,7 +58,7 @@ fun NoticeRequest.toEntity(): CmsNotice {
 
 fun NoticeRequest.validateNotice(): Boolean {
     return when {
-        categoryId.isEmpty() || categoryId.size > 2 -> {
+        categoryIds.isEmpty() || categoryIds.size > 2 -> {
             false
         }
 

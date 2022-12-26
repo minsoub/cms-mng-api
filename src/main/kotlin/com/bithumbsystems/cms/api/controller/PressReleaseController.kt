@@ -115,9 +115,11 @@ class PressReleaseController(
     suspend fun getPressReleases(
         @QueryParam
         @Parameter(hidden = true)
-        searchParams: SearchParams
+        searchParams: SearchParams,
+        @Parameter(hidden = true) @CurrentUser
+        account: Account
     ) = execute {
-        pressReleaseService.getPressReleases(searchParams)
+        pressReleaseService.getPressReleases(searchParams = searchParams, account = account)
     }
 
     @GetMapping("/{id}")

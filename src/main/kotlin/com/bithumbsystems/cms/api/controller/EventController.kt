@@ -5,12 +5,12 @@ import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.config.resolver.CurrentUser
 import com.bithumbsystems.cms.api.config.resolver.QueryParam
 import com.bithumbsystems.cms.api.model.enums.EventType
-import com.bithumbsystems.cms.api.model.request.EventDownloadRequest
 import com.bithumbsystems.cms.api.model.request.EventRequest
 import com.bithumbsystems.cms.api.model.request.FileRequest
 import com.bithumbsystems.cms.api.model.request.SearchParams
 import com.bithumbsystems.cms.api.model.response.EventDetailResponse
 import com.bithumbsystems.cms.api.model.response.EventResponse
+import com.bithumbsystems.cms.api.model.response.Response
 import com.bithumbsystems.cms.api.service.EventService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
@@ -19,10 +19,16 @@ import io.swagger.v3.oas.annotations.media.Content
 import io.swagger.v3.oas.annotations.media.Encoding
 import io.swagger.v3.oas.annotations.media.Schema
 import io.swagger.v3.oas.annotations.responses.ApiResponse
+import org.springframework.core.io.InputStreamResource
+import org.springframework.http.CacheControl
+import org.springframework.http.HttpHeaders
 import org.springframework.http.MediaType
+import org.springframework.http.ResponseEntity
 import org.springframework.http.codec.multipart.FilePart
 import org.springframework.web.bind.annotation.*
-import java.nio.ByteBuffer
+import reactor.core.publisher.Mono
+import java.net.URLEncoder
+import java.nio.charset.StandardCharsets
 import java.time.LocalDate
 
 @RestController
@@ -64,7 +70,7 @@ class EventController(
         shareFilePart: FilePart?,
         @Parameter(hidden = true) @CurrentUser
         account: Account
-    ) = execute {
+    ): ResponseEntity<Response<Any>> = execute {
         eventService.createEvent(
             request = request,
             fileRequest = FileRequest(file = filePart, shareFile = shareFilePart),
@@ -125,9 +131,11 @@ class EventController(
     suspend fun getEvents(
         @QueryParam
         @Parameter(hidden = true)
-        searchParams: SearchParams
-    ) = execute {
-        eventService.getEvents(searchParams)
+        searchParams: SearchParams,
+        @Parameter(hidden = true) @CurrentUser
+        account: Account
+    ): ResponseEntity<Response<Any>> = execute {
+        eventService.getEvents(searchParams = searchParams, account = account)
     }
 
     @GetMapping("/{id}")
@@ -177,7 +185,7 @@ class EventController(
         shareFilePart: FilePart?,
         @Parameter(hidden = true) @CurrentUser
         account: Account
-    ) = execute {
+    ): ResponseEntity<Response<Any>> = execute {
         eventService.updateEvent(
             id = id,
             request = request,
@@ -203,11 +211,11 @@ class EventController(
         @PathVariable id: String,
         @Parameter(hidden = true) @CurrentUser
         account: Account
-    ) = execute {
+    ): ResponseEntity<Response<Any>> = execute {
         eventService.deleteEvent(id = id, account = account)
     }
 
-    @GetMapping("/{id}/excel")
+    @GetMapping("/{id}/excel", produces = [MediaType.APPLICATION_OCTET_STREAM_VALUE])
     @Operation(
         summary = "이벤트 참여자 정보 다운로드",
         description = "이벤트 참여자 정보를 다운로드합니다.",
@@ -216,16 +224,24 @@ class EventController(
             ApiResponse(
                 responseCode = "200",
                 description = "다운로드 성공",
-                content = [Content(schema = Schema(implementation = ByteBuffer::class))]
+                content = [Content(schema = Schema(implementation = InputStreamResource::class))]
             )
         ]
     )
-    suspend fun downloadEventExcel(
+    fun downloadEventExcel(
         @PathVariable id: String,
-        @RequestBody request: EventDownloadRequest,
-        @Parameter(hidden = true) @CurrentUser
-        account: Account
-    ) = execute {
-        eventService.downloadEventExcel(id = id, request = request, account = account)
+        @Parameter(name = "reason", description = "다운로드 사유")
+        @RequestParam(required = true)
+        reason: String
+    ): Mono<ResponseEntity<InputStreamResource>> {
+        return eventService.downloadEventExcel(eventId = id, reason = reason) // todo 파일명
+            .flatMap {
+                Mono.just(
+                    ResponseEntity.ok().cacheControl(CacheControl.noCache())
+                        .header(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_OCTET_STREAM_VALUE)
+                        .header(HttpHeaders.CONTENT_DISPOSITION, "attachment; filename=${URLEncoder.encode("이벤트참여자목록", StandardCharsets.UTF_8)}.xlsx")
+                        .body(InputStreamResource(it))
+                )
+            }
     }
 }

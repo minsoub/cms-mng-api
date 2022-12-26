@@ -14,8 +14,6 @@ import com.bithumbsystems.cms.api.util.withoutDraft
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsNotice
 import com.bithumbsystems.cms.persistence.mongo.entity.setUpdateInfo
 import com.bithumbsystems.cms.persistence.mongo.entity.toRedisEntity
-import com.bithumbsystems.cms.persistence.mongo.repository.CmsCustomRepository
-import com.bithumbsystems.cms.persistence.mongo.repository.CmsNoticeCustomRepository
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsNoticeRepository
 import com.bithumbsystems.cms.persistence.redis.entity.RedisNotice
 import com.bithumbsystems.cms.persistence.redis.repository.RedisRepository
@@ -35,8 +33,7 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class NoticeService(
     private val noticeRepository: CmsNoticeRepository,
-    private val noticeCustomRepository: CmsCustomRepository<CmsNotice>,
-    private val customRepository: CmsNoticeCustomRepository,
+    // private val noticeCustomRepository: CmsNoticeCustomRepository,
     private val fileService: FileService,
     private val redisRepository: RedisRepository
 ) {
@@ -60,9 +57,7 @@ class NoticeService(
         action = {
             coroutineScope {
                 fileService.addFileInfo(fileRequest = fileRequest, account = account, request = request)
-
-                request.createAccountId = account.accountId
-                request.createAccountEmail = account.email
+                request.setCreateInfo(account)
 
                 val entity: CmsNotice = request.toEntity()
 
@@ -72,13 +67,13 @@ class NoticeService(
                     }
                     applyTop5ToRedis()
                 }
-                noticeCustomRepository.findById(entity.id)?.toResponse()
+                noticeRepository.findById(entity.id)?.toResponse()
             }
         }
     )
 
     private suspend fun applyToRedis() {
-        noticeCustomRepository.getFixItems().map { item -> item.toRedisEntity() }.toList().also { totalList ->
+        noticeRepository.getFixItems().map { item -> item.toRedisEntity() }.toList().also { totalList ->
             redisRepository.addOrUpdateRBucket(
                 bucketKey = CMS_NOTICE_FIX,
                 value = totalList,
@@ -88,7 +83,7 @@ class NoticeService(
     }
 
     private suspend fun applyTop5ToRedis() {
-        customRepository.findTop5ByIsDraftIsFalseOrderByScreenDateDescCreateDateDesc().map { it.toRedisEntity() }.toList().also { topList ->
+        noticeRepository.findTop5ByIsDraftIsFalseOrderByScreenDateDescCreateDateDesc().map { it.toRedisEntity() }.toList().also { topList ->
             redisRepository.addOrUpdateRBucket(
                 bucketKey = CMS_NOTICE_RECENT,
                 value = topList,
@@ -103,7 +98,7 @@ class NoticeService(
             val defaultSort: Sort = buildSort()
 
             val drafts: Deferred<List<NoticeResponse>> = async {
-                noticeCustomRepository.findAllByCriteria(
+                noticeRepository.findAllByCriteria(
                     criteria = buildCriteriaForDraft(account.accountId),
                     pageable = Pageable.unpaged(),
                     sort = buildSortForDraft()
@@ -113,7 +108,7 @@ class NoticeService(
             }
 
             val notices: Deferred<List<NoticeResponse>> = async {
-                noticeCustomRepository.findAllByCriteria(
+                noticeRepository.findAllByCriteria(
                     criteria = criteria.withoutDraft(),
                     pageable = Pageable.unpaged(),
                     sort = defaultSort
@@ -124,7 +119,7 @@ class NoticeService(
 
             val top: Deferred<List<NoticeResponse>> = async {
                 criteria = searchParams.buildCriteria(isFixTop = true, isDelete = false)
-                noticeCustomRepository.findAllByCriteria(criteria = criteria, pageable = Pageable.unpaged(), sort = defaultSort)
+                noticeRepository.findAllByCriteria(criteria = criteria.withoutDraft(), pageable = Pageable.unpaged(), sort = defaultSort)
                     .map { it.toMaskingResponse() }
                     .toList()
             }
@@ -137,7 +132,7 @@ class NoticeService(
     }
 
     suspend fun getNotice(id: String): Result<NoticeDetailResponse?, ErrorData> = executeIn {
-        noticeCustomRepository.findById(id)?.toResponse()
+        noticeRepository.findById(id)?.toResponse()
     }
 
     @Transactional
@@ -153,7 +148,7 @@ class NoticeService(
         action = {
             fileService.addFileInfo(fileRequest = fileRequest, account = account, request = request)
 
-            noticeCustomRepository.findById(id)?.let {
+            noticeRepository.findById(id)?.let {
                 val isChange: Boolean = it.isFixTop != request.isFixTop
                 it.setUpdateInfo(request = request, account = account)
                 noticeRepository.save(it).toResponse().also {
@@ -168,7 +163,7 @@ class NoticeService(
 
     @Transactional
     suspend fun deleteNotice(id: String, account: Account): Result<NoticeDetailResponse?, ErrorData> = executeIn {
-        noticeCustomRepository.findById(id)?.let {
+        noticeRepository.findById(id)?.let {
             when (it.isDelete) {
                 true -> it.toResponse()
                 false -> {

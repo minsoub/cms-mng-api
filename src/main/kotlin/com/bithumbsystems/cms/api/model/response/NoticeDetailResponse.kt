@@ -11,7 +11,7 @@ data class NoticeDetailResponse(
     @Schema(description = "아이디", example = "b40f760a9ce84702905347b1e0d98aeb")
     val id: String,
     @Schema(description = "카테고리명")
-    val categoryName: List<Category>,
+    val categoryNames: List<Category>,
     @Schema(description = "제목", example = "제목")
     val title: String,
     @Schema(description = "본문", example = "본문")
@@ -65,7 +65,7 @@ data class NoticeDetailResponse(
 fun NoticeDetailResponse.toRedisEntity(): RedisNotice = RedisNotice(
     id = id,
     title = title,
-    categoryName = categoryName.map { it.name }.toList(),
+    categoryNames = categoryNames.map { it.name }.toList(),
     screenDate = screenDate ?: createDate
 )
 
@@ -73,9 +73,9 @@ fun NoticeDetailResponse.toRedisEntity(): RedisNotice = RedisNotice(
  * CmsNotice Entity를 NoticeCategoryDetailResponse 변환한다.
  * @return 마스킹 처리되지 않은 응답
  */
-fun CmsNotice.toResponse() = NoticeDetailResponse(
+fun CmsNotice.toResponse(): NoticeDetailResponse = NoticeDetailResponse(
     id = id,
-    categoryName = categoryName,
+    categoryNames = categoryNames,
     title = title,
     content = content,
     isFixTop = isFixTop,

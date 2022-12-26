@@ -1,4 +1,3 @@
-
 import org.jetbrains.kotlin.gradle.tasks.KotlinCompile
 
 plugins {
@@ -73,6 +72,11 @@ dependencies {
     implementation("io.awspring.cloud:spring-cloud-starter-aws:2.4.1")
     implementation("io.awspring.cloud:spring-cloud-starter-aws-messaging:2.4.1")
     implementation("io.awspring.cloud:spring-cloud-starter-aws-parameter-store-config:2.4.1")
+
+    // excel
+    implementation("org.apache.poi:poi:5.2.3")
+    implementation("org.apache.poi:poi-ooxml:5.2.3")
+
     // test
     testImplementation("org.springframework.boot:spring-boot-starter-test") {
         exclude(group = "org.junit.vintage", module = "junit-vintage-engine")

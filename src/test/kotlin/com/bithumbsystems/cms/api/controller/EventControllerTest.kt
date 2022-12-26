@@ -45,6 +45,7 @@ class EventControllerTest @Autowired constructor(
     fun `이벤트 목록 조회 테스트`() {
         val responseBody: Response<*>? = client.get()
             .uri("/api/v1/mng/cms/events")
+            .header("authorization", "Bearer $token")
             .exchange()
             .expectStatus().isOk
             .expectBody(Response::class.java)
@@ -59,7 +60,7 @@ class EventControllerTest @Autowired constructor(
     @Order(3)
     fun `이벤트 조회 테스트`() {
         val responseBody: Response<*>? = client.get()
-            .uri("/api/v1/mng/cms/events/$id}")
+            .uri("/api/v1/mng/cms/events/$id")
             .exchange()
             .expectStatus().isOk
             .expectBody(Response::class.java)
@@ -78,7 +79,7 @@ class EventControllerTest @Autowired constructor(
         }
 
         val responseBody: Response<*>? = client.put()
-            .uri("/api/v1/mng/cms/events/$id}")
+            .uri("/api/v1/mng/cms/events/$id")
             .header("authorization", "Bearer $token")
             .contentType(MediaType.MULTIPART_FORM_DATA)
             .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
@@ -95,7 +96,7 @@ class EventControllerTest @Autowired constructor(
     @Order(5)
     fun `이벤트 삭제 테스트`() {
         val responseBody: Response<*>? = client.delete()
-            .uri("/api/v1/mng/cms/events/$id}")
+            .uri("/api/v1/mng/cms/events/$id")
             .header("authorization", "Bearer $token")
             .exchange()
             .expectStatus().isOk

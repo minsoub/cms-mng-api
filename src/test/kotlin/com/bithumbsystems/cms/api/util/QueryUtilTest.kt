@@ -25,7 +25,7 @@ internal class QueryUtilTest {
         val searchParamsQuery = SearchParams(query = "1")
         val searchParamsQueryDBList = searchParamsQuery.buildCriteria(isFixTop = null, isDelete = false).criteriaObject["\$or"] as BasicDBList
 
-        val searchParamsCategory = SearchParams(categoryId = "abcdef")
+        val searchParamsCategory = SearchParams(categoryIds = "abcdef")
         val searchParamsCategoryDBList = searchParamsCategory.buildCriteria(isFixTop = null, isDelete = false).criteriaObject["\$and"] as BasicDBList
 
         val searchParamsIsBanner = SearchParams(isBanner = true)
@@ -42,7 +42,7 @@ internal class QueryUtilTest {
         (searchParamsQueryDBList[0] as Document)["title"].toString() `should be equal to` ".*1.*"
         (searchParamsQueryDBList[1] as Document)["content"].toString() `should be equal to` ".*1.*"
         (searchParamsQueryDBList[2] as Document)["name"].toString() `should be equal to` ".*1.*"
-        ((searchParamsCategoryDBList[0] as Document)["category_id"] as Document)["\$in"].toString() `should be equal to` "[abcdef]"
+        ((searchParamsCategoryDBList[0] as Document)["category_ids"] as Document)["\$in"].toString() `should be equal to` "[abcdef]"
         (searchParamsIsBannerDBList[0] as Document)["is_banner"] `should be` (true)
         (searchParamsIsShowDBList[0] as Document)["is_show"] `should be` (true)
         (searchParamsIsUseDBList[0] as Document)["is_use"] `should be` (true)

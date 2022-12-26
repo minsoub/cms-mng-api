@@ -2,6 +2,7 @@ package com.bithumbsystems.cms.persistence.redis.repository
 
 import com.bithumbsystems.cms.api.model.enums.RedisKeys.*
 import com.fasterxml.jackson.core.type.TypeReference
+import com.github.michaelbull.result.Result
 import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import kotlinx.coroutines.test.runTest
@@ -46,7 +47,7 @@ class RedisRepositoryTest @Autowired constructor(
             valueKey = id,
             value = TestData(id = id, name = "test", createDate = LocalDateTime.now()),
             clazz = TestData::class.java
-        )?.id `should be equal to` id
+        ).component1()?.id `should be equal to` id
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -82,7 +83,7 @@ class RedisRepositoryTest @Autowired constructor(
             score = test.getScore(),
             value = test,
             clazz = TestData::class.java
-        )
+        ).component1()
 
         test = TestData(id = id, name = "test12", createDate = LocalDateTime.now().plusMinutes(1))
         val second: Boolean? = redisRepository.addRScoredSortedSetValue(
@@ -90,7 +91,7 @@ class RedisRepositoryTest @Autowired constructor(
             score = test.getScore(),
             value = test,
             clazz = TestData::class.java
-        )
+        ).component1()
 
         test = TestData(
             id = UUID.randomUUID().toString().replace("-", ""),
@@ -102,7 +103,7 @@ class RedisRepositoryTest @Autowired constructor(
             score = test.getScore(),
             value = test,
             clazz = TestData::class.java
-        )
+        ).component1()
 
         test = TestData(
             id = UUID.randomUUID().toString().replace("-", ""),
@@ -114,7 +115,7 @@ class RedisRepositoryTest @Autowired constructor(
             score = test.getScore(),
             value = test,
             clazz = TestData::class.java
-        )
+        ).component1()
 
         first `should be` true
         second `should be` true
@@ -166,19 +167,19 @@ class RedisRepositoryTest @Autowired constructor(
             listKey = LIST_TEST_KEY,
             value = TestData(id = UUID.randomUUID().toString().replace("-", ""), name = "test1", createDate = LocalDateTime.now()),
             clazz = TestData::class.java
-        )
+        ).component1()
         target = TestData(id, "test2", LocalDateTime.now())
         val second: Boolean? = redisRepository.addRListValue(
             listKey = LIST_TEST_KEY,
             value = target,
             clazz = TestData::class.java
-        )
+        ).component1()
 
         val third: Boolean? = redisRepository.addRListValue(
             listKey = LIST_TEST_KEY,
             value = TestData(id = UUID.randomUUID().toString().replace("-", ""), name = "test3", createDate = LocalDateTime.now()),
             clazz = TestData::class.java
-        )
+        ).component1()
 
         first `should be` true
         second `should be` true
@@ -197,7 +198,7 @@ class RedisRepositoryTest @Autowired constructor(
                 TestData(id = UUID.randomUUID().toString().replace("-", ""), name = "test33", createDate = LocalDateTime.now())
             ),
             clazz = TestData::class.java
-        ) `should be` true
+        ).component1() `should be` true
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -235,7 +236,8 @@ class RedisRepositoryTest @Autowired constructor(
     @Test
     fun updateRListValueById() = runTest {
         target.name = "테스트2"
-        redisRepository.updateRListValueById(listKey = LIST_TEST_KEY, id = id, updateValue = target, clazz = TestData::class.java) `should be` true
+        redisRepository.updateRListValueById(listKey = LIST_TEST_KEY, id = id, updateValue = target, clazz = TestData::class.java)
+            .component1() `should be` true
 
         val item: TestData? = redisRepository.getRListValue(listKey = LIST_TEST_KEY, clazz = TestData::class.java)?.find { it.id == id }
         item?.id.equals(id) `should be` true
@@ -246,14 +248,14 @@ class RedisRepositoryTest @Autowired constructor(
     @Order(15)
     @Test
     fun deleteRListValue() = runTest {
-        redisRepository.deleteRListValue(listKey = LIST_TEST_KEY, id = id, clazz = TestData::class.java)?.id.equals(id) `should be` true
+        redisRepository.deleteRListValue(listKey = LIST_TEST_KEY, id = id, clazz = TestData::class.java).component1()?.id.equals(id) `should be` true
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
     @Order(16)
     @Test
     fun deleteRList() = runTest {
-        redisRepository.deleteRList(listKey = LIST_TEST_KEY, clazz = TestData::class.java) `should be` true
+        redisRepository.deleteRList(listKey = LIST_TEST_KEY, clazz = TestData::class.java).component1() `should be` true
     }
 
     @OptIn(ExperimentalCoroutinesApi::class)
@@ -305,9 +307,12 @@ class RedisRepositoryTest @Autowired constructor(
     @Order(19)
     @Test
     fun deleteRBucket() = runTest {
-        val result: Boolean? = redisRepository.deleteRBucket(bucketKey = BUCKET_TEST_KEY, typeReference = object : TypeReference<List<TestData>>() {})
+        val result: Result<Boolean?, Throwable> = redisRepository.deleteRBucket(
+            bucketKey = BUCKET_TEST_KEY,
+            typeReference = object : TypeReference<List<TestData>>() {}
+        )
 
-        result `should be` true
+        result.component1() `should be` true
     }
 
     data class TestData(
