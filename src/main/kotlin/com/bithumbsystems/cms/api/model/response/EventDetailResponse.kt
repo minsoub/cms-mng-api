@@ -4,7 +4,7 @@ import com.bithumbsystems.cms.api.model.enums.EventTarget
 import com.bithumbsystems.cms.api.model.enums.EventType
 import com.bithumbsystems.cms.api.model.request.Message
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsEvent
-import com.bithumbsystems.cms.persistence.redis.entity.RedisCommon
+import com.bithumbsystems.cms.persistence.redis.entity.RedisBoard
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
@@ -78,7 +78,7 @@ class EventDetailResponse(
     val updateDate: LocalDateTime? = null
 )
 
-fun EventDetailResponse.toRedisEntity(): RedisCommon = RedisCommon(
+fun EventDetailResponse.toRedisEntity(): RedisBoard = RedisBoard(
     id = id,
     title = title,
     screenDate = screenDate ?: createDate

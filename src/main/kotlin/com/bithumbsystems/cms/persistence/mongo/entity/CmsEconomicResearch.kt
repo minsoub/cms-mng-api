@@ -1,9 +1,9 @@
 package com.bithumbsystems.cms.persistence.mongo.entity
 
 import com.bithumbsystems.cms.api.config.resolver.Account
-import com.bithumbsystems.cms.api.model.constants.ShareConstants.NOTICE_TITLE
+import com.bithumbsystems.cms.api.model.constants.ShareConstants.ECONOMIC_RESEARCH_TITLE
 import com.bithumbsystems.cms.api.model.request.EconomicResearchRequest
-import com.bithumbsystems.cms.persistence.redis.entity.RedisEconomicResearch
+import com.bithumbsystems.cms.persistence.redis.entity.RedisThumbnail
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.MongoId
 import java.time.LocalDateTime
@@ -57,7 +57,7 @@ fun CmsEconomicResearch.setUpdateInfo(request: EconomicResearchRequest, account:
     shareTitle = request.shareTitle ?: title
     shareDescription = request.shareDescription
     shareFileId = request.shareFileId
-    shareButtonName = request.shareButtonName ?: NOTICE_TITLE
+    shareButtonName = request.shareButtonName ?: ECONOMIC_RESEARCH_TITLE
     isSchedule = request.isSchedule
     scheduleDate = request.scheduleDate
     isDraft = request.isDraft
@@ -72,8 +72,9 @@ fun CmsEconomicResearch.setUpdateInfo(request: EconomicResearchRequest, account:
     thumbnailUrl = request.thumbnailUrl
 }
 
-fun CmsEconomicResearch.toRedisEntity(): RedisEconomicResearch = RedisEconomicResearch(
+fun CmsEconomicResearch.toRedisEntity(): RedisThumbnail = RedisThumbnail(
     id = id,
     title = title,
+    thumbnailUrl = thumbnailFileId,
     screenDate = screenDate ?: createDate
 )

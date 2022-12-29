@@ -45,6 +45,7 @@ class EconomicResearchControllerTest @Autowired constructor(
     fun `빗썸 경제연구소 목록 조회 테스트`() {
         val responseBody: Response<*>? = client.get()
             .uri("/api/v1/mng/cms/economic-researches")
+            .header("authorization", "Bearer $token")
             .exchange()
             .expectStatus().isOk
             .expectBody(Response::class.java)

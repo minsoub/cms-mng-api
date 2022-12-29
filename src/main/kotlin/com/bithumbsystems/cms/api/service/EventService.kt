@@ -15,7 +15,7 @@ import com.bithumbsystems.cms.persistence.mongo.entity.setUpdateInfo
 import com.bithumbsystems.cms.persistence.mongo.entity.toRedisEntity
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsEventParticipantsRepository
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsEventRepository
-import com.bithumbsystems.cms.persistence.redis.entity.RedisCommon
+import com.bithumbsystems.cms.persistence.redis.entity.RedisBoard
 import com.bithumbsystems.cms.persistence.redis.repository.RedisRepository
 import com.fasterxml.jackson.core.type.TypeReference
 import com.github.michaelbull.result.Result
@@ -64,9 +64,7 @@ class EventService(
         },
         action = {
             fileService.addFileInfo(fileRequest = fileRequest, account = account, request = request)
-
-            request.createAccountId = account.accountId
-            request.createAccountEmail = account.email
+            request.setCreateInfo(account)
 
             eventRepository.save(request.toEntity()).toResponse().also {
                 if (it.isFixTop) {
@@ -81,7 +79,7 @@ class EventService(
             redisRepository.addOrUpdateRBucket(
                 bucketKey = CMS_EVENT_FIX,
                 value = totalList,
-                typeReference = object : TypeReference<List<RedisCommon>>() {}
+                typeReference = object : TypeReference<List<RedisBoard>>() {}
             )
         }
     }

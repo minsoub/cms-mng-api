@@ -1,7 +1,7 @@
 package com.bithumbsystems.cms.api.model.response
 
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsPressRelease
-import com.bithumbsystems.cms.persistence.redis.entity.RedisCommon
+import com.bithumbsystems.cms.persistence.redis.entity.RedisBoard
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
@@ -57,7 +57,7 @@ class PressReleaseDetailResponse(
     val updateDate: LocalDateTime? = null
 )
 
-fun PressReleaseDetailResponse.toRedisEntity(): RedisCommon = RedisCommon(
+fun PressReleaseDetailResponse.toRedisEntity(): RedisBoard = RedisBoard(
     id = id,
     title = title,
     screenDate = screenDate ?: createDate

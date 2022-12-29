@@ -45,10 +45,11 @@ class FileController(
             content = [Content(mediaType = APPLICATION_OCTET_STREAM_VALUE)]
         )
         file: FilePart,
+        @RequestHeader("Content-Length") contentLength: Long,
         @Parameter(hidden = true) @CurrentUser
         account: Account
     ): ResponseEntity<Response<Any>> = execute {
-        fileService.addFileInfo(file = file, account = account)
+        fileService.addFileInfo(file = file, account = account, fileSize = contentLength)
     }
 
     @GetMapping("/{fileKey}", produces = [APPLICATION_OCTET_STREAM_VALUE])
@@ -76,5 +77,22 @@ class FileController(
                         .body(it.result.map { bf -> bf })
                 )
             }
+    }
+
+    @GetMapping("/{fileKey}/info")
+    @Operation(
+        summary = "파일 정보 조회",
+        description = "파일 정보를 조회 합니다.",
+        tags = ["게시글 > 상세 조회"],
+        responses = [
+            ApiResponse(
+                responseCode = "200",
+                description = "조회 성공",
+                content = [Content(schema = Schema(implementation = FileInfoResponse::class))]
+            )
+        ]
+    )
+    suspend fun getFileInfo(@PathVariable fileKey: String): ResponseEntity<Response<Any>> = execute {
+        fileService.getFileInfo(fileKey)
     }
 }

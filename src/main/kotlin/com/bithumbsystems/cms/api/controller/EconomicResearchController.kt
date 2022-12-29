@@ -120,9 +120,11 @@ class EconomicResearchController(
     suspend fun getEconomicResearches(
         @QueryParam
         @Parameter(hidden = true)
-        searchParams: SearchParams
+        searchParams: SearchParams,
+        @Parameter(hidden = true) @CurrentUser
+        account: Account
     ) = execute {
-        economicResearchService.getEconomicResearches(searchParams)
+        economicResearchService.getEconomicResearches(searchParams = searchParams, account = account)
     }
 
     @GetMapping("/{id}")

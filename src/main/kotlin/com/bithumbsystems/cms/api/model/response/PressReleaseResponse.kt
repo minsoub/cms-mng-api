@@ -46,7 +46,7 @@ fun CmsPressRelease.toMaskingResponse(): PressReleaseResponse = PressReleaseResp
     updateDate = updateDate
 )
 
-fun CmsPressRelease.toDraftResponse() = PressReleaseResponse(
+fun CmsPressRelease.toDraftResponse(): PressReleaseResponse = PressReleaseResponse(
     id = id,
     title = title,
     isFixTop = isFixTop,

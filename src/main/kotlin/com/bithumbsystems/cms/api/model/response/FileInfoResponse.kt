@@ -28,7 +28,7 @@ class FileInfoResponse(
  * CmsFileInfo Entity를 FileInfoResponse로 변환한다.
  * @return FileInfoResponse
  */
-fun CmsFileInfo.toResponse() = FileInfoResponse(
+fun CmsFileInfo.toResponse(): FileInfoResponse = FileInfoResponse(
     id = id,
     name = name,
     size = size,
