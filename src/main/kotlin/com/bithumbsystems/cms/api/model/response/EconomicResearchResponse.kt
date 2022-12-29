@@ -14,17 +14,17 @@ class EconomicResearchResponse(
     @Schema(description = "상단 고정 여부", example = "false")
     val isFixTop: Boolean = false,
     @Schema(description = "상태(공개 여부)", example = "false")
-    val isShow: Boolean = true,
+    val isShow: Boolean? = true,
     @Schema(description = "초안 여부", example = "false")
     var isDraft: Boolean = false,
     @Schema(description = "조회수", example = "0")
-    var readCount: Long = 0,
+    var readCount: Long? = 0,
     @Schema(description = "화면 표시용 일시", example = "2022-12-07 11:11:11")
     var screenDate: LocalDateTime? = null,
     @Schema(description = "생성자 이메일", example = "abc@example.com")
-    val createAccountEmail: String,
+    val createAccountEmail: String?,
     @Schema(description = "생성일시, 예시: 2022-12-07 11:11:11", example = "2022-12-07 11:11:11")
-    val createDate: LocalDateTime,
+    val createDate: LocalDateTime?,
     @Schema(description = "수정일시, 예시: 2022-12-07 11:11:11", example = "2022-12-07 11:11:11")
     val updateDate: LocalDateTime? = null
 )
@@ -33,7 +33,7 @@ class EconomicResearchResponse(
  * CmsEconomicResearch Entity를 EconomicResearchResponse 변환한다.
  * @return 마스킹 처리된 응답
  */
-fun CmsEconomicResearch.toMaskingResponse() = EconomicResearchResponse(
+fun CmsEconomicResearch.toMaskingResponse(): EconomicResearchResponse = EconomicResearchResponse(
     id = id,
     title = title,
     isFixTop = isFixTop,
@@ -44,4 +44,17 @@ fun CmsEconomicResearch.toMaskingResponse() = EconomicResearchResponse(
     createAccountEmail = createAccountEmail.getEmailMask(),
     createDate = if (isUseUpdateDate) screenDate ?: createDate else createDate,
     updateDate = updateDate
+)
+
+fun CmsEconomicResearch.toDraftResponse(): EconomicResearchResponse = EconomicResearchResponse(
+    id = id,
+    title = title,
+    isFixTop = isFixTop,
+    isShow = null,
+    isDraft = isDraft,
+    readCount = null,
+    screenDate = screenDate,
+    createAccountEmail = null,
+    createDate = null,
+    updateDate = null
 )

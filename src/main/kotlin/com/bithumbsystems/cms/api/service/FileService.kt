@@ -6,14 +6,14 @@ import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.model.aggregate.FileResult
 import com.bithumbsystems.cms.api.model.request.*
 import com.bithumbsystems.cms.api.model.response.ErrorData
+import com.bithumbsystems.cms.api.model.response.FileInfoResponse
 import com.bithumbsystems.cms.api.model.response.toResponse
 import com.bithumbsystems.cms.api.util.*
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsFileInfoRepository
 import com.github.michaelbull.result.Result
 import kotlinx.coroutines.CoroutineDispatcher
-import kotlinx.coroutines.Deferred
-import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactor.awaitSingle
 import kotlinx.coroutines.reactor.mono
 import org.springframework.http.codec.multipart.FilePart
@@ -36,49 +36,88 @@ class FileService(
         action = { file.upload(s3AsyncClient, awsProperties.bucket) }
     )
 
-    suspend fun addFileInfo(file: FilePart, account: Account) = executeIn {
-        coroutineScope {
-            val id: Deferred<Result<String?, ErrorData>> = async {
-                upload(file)
-            }
+    suspend fun upload(fileKey: String, file: FilePart) = executeIn(
+        dispatcher = ioDispatcher,
+        action = { file.upload(fileKey, s3AsyncClient, awsProperties.bucket) }
+    )
 
-            id.await().component1()?.let {
+    suspend fun addFileInfo(file: FilePart, account: Account, fileSize: Long?): Result<FileInfoResponse?, ErrorData> = executeIn(
+        dispatcher = ioDispatcher,
+        action = {
+            upload(file).component1()?.let {
                 val fileInfoRequest = FileInfoRequest(
                     id = it,
                     name = file.filename().getFileName(),
-                    size = file.headers().contentLength, // todo 파일 사이즈 로직 변경
+                    size = fileSize ?: file.content().count().awaitSingle(),
                     extension = file.filename().getFileExtensionType()
                 )
                 fileInfoRequest.setCreateInfo(account)
                 fileInfoRepository.save(fileInfoRequest.toEntity()).toResponse()
             }
         }
-    }
+    )
+
+    suspend fun addFileInfo(fileKey: String, file: FilePart, account: Account, fileSize: Long?): Result<FileInfoResponse?, ErrorData> = executeIn(
+        dispatcher = ioDispatcher,
+        action = {
+            coroutineScope {
+                launch {
+                    upload(fileKey, file)
+                }
+
+                FileInfoRequest(
+                    id = fileKey,
+                    name = file.filename().getFileName(),
+                    size = fileSize ?: file.content().count().awaitSingle(),
+                    extension = file.filename().getFileExtensionType()
+                ).run {
+                    this.setCreateInfo(account)
+                    fileInfoRepository.save(this.toEntity()).toResponse()
+                }
+            }
+        }
+    )
 
     suspend fun addFileInfo(
         fileRequest: FileRequest?,
         account: Account,
         request: CommonBoardRequest
-    ) {
-        fileRequest?.let {
-            it.file?.let { file ->
-                addFileInfo(file, account).component1()?.let { fileResponse ->
-                    request.fileId = fileResponse.id
-                }
-            }
+    ) = executeIn(
+        dispatcher = ioDispatcher,
+        action = {
+            coroutineScope {
+                fileRequest?.let {
+                    launch {
+                        it.file?.let { file ->
+                            it.fileKey?.let { fileKey ->
+                                addFileInfo(fileKey = fileKey, file = file, account = account, fileSize = null)
+                                request.fileId = fileKey
+                            }
+                        }
+                    }
 
-            it.shareFile?.let { shareFile ->
-                addFileInfo(shareFile, account).component1()?.let { fileResponse ->
-                    request.shareFileId = fileResponse.id
+                    launch {
+                        it.shareFile?.let { shareFile ->
+                            it.shareFileKey?.let { shareFileKey ->
+                                addFileInfo(fileKey = shareFileKey, file = shareFile, account = account, fileSize = null)
+                                request.shareFileId = shareFileKey
+                            }
+                        }
+                    }
                 }
             }
         }
+    )
+
+    suspend fun getFileInfo(id: String): Result<FileInfoResponse?, ErrorData> = executeIn {
+        fileInfoRepository.findById(id)?.toResponse()
     }
 
     fun download(fileKey: String): Mono<FileResult> = mono {
         logger.info("download fileKey: $fileKey")
+        val fileInfo: FileInfoResponse? = fileInfoRepository.findById(fileKey)?.toResponse()
         FileResult(
-            fileName = "",
+            fileName = fileInfo?.name.plus(".".plus(fileInfo?.extension?.name?.lowercase())),
             result = fileKey.download(s3AsyncClient = s3AsyncClient, bucket = awsProperties.bucket).awaitSingle()
         )
     }

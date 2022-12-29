@@ -14,7 +14,7 @@ import com.bithumbsystems.cms.api.util.withoutDraft
 import com.bithumbsystems.cms.persistence.mongo.entity.setUpdateInfo
 import com.bithumbsystems.cms.persistence.mongo.entity.toRedisEntity
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsPressReleaseRepository
-import com.bithumbsystems.cms.persistence.redis.entity.RedisCommon
+import com.bithumbsystems.cms.persistence.redis.entity.RedisBoard
 import com.bithumbsystems.cms.persistence.redis.repository.RedisRepository
 import com.fasterxml.jackson.core.type.TypeReference
 import com.github.michaelbull.result.Result
@@ -68,7 +68,7 @@ class PressReleaseService(
             redisRepository.addOrUpdateRBucket(
                 bucketKey = CMS_PRESS_RELEASE_FIX,
                 value = totalList,
-                typeReference = object : TypeReference<List<RedisCommon>>() {}
+                typeReference = object : TypeReference<List<RedisBoard>>() {}
             )
         }
     }
@@ -78,7 +78,7 @@ class PressReleaseService(
             redisRepository.addOrUpdateRBucket(
                 bucketKey = CMS_PRESS_RELEASE_RECENT,
                 value = topList,
-                typeReference = object : TypeReference<List<RedisCommon>>() {}
+                typeReference = object : TypeReference<List<RedisBoard>>() {}
             )
         }
     }

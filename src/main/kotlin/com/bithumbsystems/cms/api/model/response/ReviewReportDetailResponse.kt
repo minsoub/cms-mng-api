@@ -1,6 +1,8 @@
 package com.bithumbsystems.cms.api.model.response
 
+import com.bithumbsystems.cms.api.util.getS3Url
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsReviewReport
+import com.bithumbsystems.cms.persistence.redis.entity.RedisThumbnail
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
@@ -60,37 +62,12 @@ class ReviewReportDetailResponse(
     val updateDate: LocalDateTime? = null
 )
 
-fun ReviewReportDetailResponse.toEntity(): CmsReviewReport {
-    val entity = CmsReviewReport(
-        id = id,
-        title = title,
-        content = content,
-        createAccountId = createAccountId,
-        createAccountEmail = createAccountEmail,
-        createDate = createDate
-    )
-    entity.isFixTop = isFixTop
-    entity.isShow = isShow
-    entity.isDelete = isDelete
-    entity.fileId = fileId
-    entity.shareTitle = shareTitle
-    entity.shareDescription = shareDescription
-    entity.shareFileId = shareFileId
-    entity.shareButtonName = shareButtonName
-    entity.isSchedule = isSchedule
-    entity.scheduleDate = scheduleDate
-    entity.isDraft = isDraft
-    entity.readCount = readCount
-    entity.isUseUpdateDate = isUseUpdateDate
-    entity.isAlignTop = isAlignTop
-    entity.screenDate = screenDate
-    entity.thumbnailFileId = thumbnailFileId
-    entity.thumbnailUrl = thumbnailUrl
-    entity.updateAccountId = updateAccountId
-    entity.updateAccountEmail = updateAccountEmail
-    entity.updateDate = updateDate
-    return entity
-}
+fun ReviewReportDetailResponse.toRedisEntity(): RedisThumbnail = RedisThumbnail(
+    id = id,
+    title = title,
+    thumbnailUrl = thumbnailUrl ?: thumbnailFileId?.getS3Url(),
+    screenDate = screenDate ?: createDate
+)
 
 /**
  * CmsReviewReport Entity를 ReviewReportDetailResponse 변환한다.
@@ -116,7 +93,7 @@ fun CmsReviewReport.toResponse(): ReviewReportDetailResponse = ReviewReportDetai
     isAlignTop = isAlignTop,
     screenDate = screenDate,
     thumbnailFileId = thumbnailFileId,
-    thumbnailUrl = thumbnailUrl,
+    thumbnailUrl = thumbnailUrl ?: thumbnailFileId?.getS3Url(),
     createAccountId = createAccountId,
     createAccountEmail = createAccountEmail,
     createDate = if (isUseUpdateDate) screenDate ?: createDate else createDate,

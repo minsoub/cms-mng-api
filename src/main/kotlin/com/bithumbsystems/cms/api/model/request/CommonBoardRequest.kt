@@ -98,3 +98,10 @@ fun CommonBoardRequest.setCreateInfo(account: Account) {
     createAccountEmail = account.email
     createAccountId = account.accountId
 }
+
+fun CommonBoardRequest.setCreateInfo(fileRequest: FileRequest, account: Account) {
+    fileId = fileRequest.fileKey
+    shareFileId = fileRequest.shareFileKey
+    createAccountEmail = account.email
+    createAccountId = account.accountId
+}

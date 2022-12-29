@@ -6,7 +6,7 @@ import com.bithumbsystems.cms.api.model.enums.EventTarget
 import com.bithumbsystems.cms.api.model.enums.EventType
 import com.bithumbsystems.cms.api.model.request.EventRequest
 import com.bithumbsystems.cms.api.model.request.Message
-import com.bithumbsystems.cms.persistence.redis.entity.RedisCommon
+import com.bithumbsystems.cms.persistence.redis.entity.RedisBoard
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.MongoId
 import java.time.LocalDateTime
@@ -80,7 +80,7 @@ fun CmsEvent.setUpdateInfo(request: EventRequest, account: Account) {
     screenDate = if (isUseUpdateDate) LocalDateTime.now() else null
 }
 
-fun CmsEvent.toRedisEntity(): RedisCommon = RedisCommon(
+fun CmsEvent.toRedisEntity(): RedisBoard = RedisBoard(
     id = id,
     title = title,
     screenDate = screenDate ?: createDate

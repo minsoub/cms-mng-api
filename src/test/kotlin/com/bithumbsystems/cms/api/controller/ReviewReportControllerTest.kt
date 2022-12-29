@@ -45,6 +45,7 @@ class ReviewReportControllerTest @Autowired constructor(
     fun `가상자산 검토보고서 목록 조회 테스트`() {
         val responseBody: Response<*>? = client.get()
             .uri("/api/v1/mng/cms/review-reports")
+            .header("authorization", "Bearer $token")
             .exchange()
             .expectStatus().isOk
             .expectBody(Response::class.java)

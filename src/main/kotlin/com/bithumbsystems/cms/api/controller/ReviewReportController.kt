@@ -119,9 +119,11 @@ class ReviewReportController(
     suspend fun getReviewReports(
         @QueryParam
         @Parameter(hidden = true)
-        searchParams: SearchParams
+        searchParams: SearchParams,
+        @Parameter(hidden = true) @CurrentUser
+        account: Account
     ) = execute {
-        reviewReportService.getReviewReports(searchParams)
+        reviewReportService.getReviewReports(searchParams = searchParams, account = account)
     }
 
     @GetMapping("/{id}")

@@ -2,9 +2,9 @@ package com.bithumbsystems.cms.persistence.redis.entity
 
 import java.time.LocalDateTime
 
-data class RedisWithThumbnail(
+data class RedisThumbnail(
     val id: String,
     val title: String,
-    val thumbnailFileId: String?, // todo
+    val thumbnailUrl: String?,
     val screenDate: LocalDateTime
 )

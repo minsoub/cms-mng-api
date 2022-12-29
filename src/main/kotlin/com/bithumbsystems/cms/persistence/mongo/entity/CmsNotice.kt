@@ -3,6 +3,7 @@ package com.bithumbsystems.cms.persistence.mongo.entity
 import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.model.aggregate.Category
 import com.bithumbsystems.cms.api.model.constants.ShareConstants.NOTICE_TITLE
+import com.bithumbsystems.cms.api.model.request.FileRequest
 import com.bithumbsystems.cms.api.model.request.NoticeRequest
 import com.bithumbsystems.cms.persistence.redis.entity.RedisNotice
 import org.springframework.data.annotation.ReadOnlyProperty
@@ -52,7 +53,7 @@ fun CmsNotice.setUpdateInfo(account: Account) {
     updateDate = LocalDateTime.now()
 }
 
-fun CmsNotice.setUpdateInfo(request: NoticeRequest, account: Account) {
+fun CmsNotice.setUpdateInfo(request: NoticeRequest, account: Account, fileRequest: FileRequest?) {
     categoryIds = request.categoryIds
     title = request.title
     isFixTop = request.isFixTop
@@ -60,10 +61,10 @@ fun CmsNotice.setUpdateInfo(request: NoticeRequest, account: Account) {
     isDelete = request.isDelete
     isBanner = request.isBanner
     content = request.content
-    fileId = request.fileId
+    fileId = fileRequest?.fileKey ?: request.fileId
     shareTitle = request.shareTitle ?: title
     shareDescription = request.shareDescription
-    shareFileId = request.shareFileId
+    shareFileId = fileRequest?.shareFileKey ?: request.shareFileId
     shareButtonName = request.shareButtonName ?: NOTICE_TITLE
     isSchedule = request.isSchedule
     scheduleDate = request.scheduleDate

@@ -22,8 +22,10 @@ import com.github.michaelbull.result.Result
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.query.Criteria
@@ -33,7 +35,6 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class NoticeService(
     private val noticeRepository: CmsNoticeRepository,
-    // private val noticeCustomRepository: CmsNoticeCustomRepository,
     private val fileService: FileService,
     private val redisRepository: RedisRepository
 ) {
@@ -56,10 +57,22 @@ class NoticeService(
         },
         action = {
             coroutineScope {
-                fileService.addFileInfo(fileRequest = fileRequest, account = account, request = request)
-                request.setCreateInfo(account)
+                fileRequest?.let {
+                    it.setKeys().also {
+                        launch {
+                            fileService.addFileInfo(fileRequest = fileRequest, account = account, request = request)
+                        }
+                        request.setCreateInfo(fileRequest = fileRequest, account = account)
+                    }
+                } ?: request.setCreateInfo(account)
 
                 val entity: CmsNotice = request.toEntity()
+
+                if (request.isBanner) {
+                    // 이전 게시글 있는지 여부 확인
+                    findAndDeleteAllBanner(account)
+                    addBannerToRedis(entity.toRedisEntity())
+                }
 
                 noticeRepository.save(entity).toResponse().also {
                     if (it.isFixTop) {
@@ -89,6 +102,31 @@ class NoticeService(
                 value = topList,
                 typeReference = object : TypeReference<List<RedisNotice>>() {}
             )
+        }
+    }
+
+    private suspend fun addBannerToRedis(redisEntity: RedisNotice) {
+        redisRepository.addOrUpdateRBucket(
+            bucketKey = CMS_NOTICE_BANNER,
+            value = redisEntity,
+            typeReference = object : TypeReference<RedisNotice>() {}
+        )
+    }
+
+    private suspend fun deleteBannerFromRedis() {
+        redisRepository.deleteRBucket(
+            bucketKey = CMS_NOTICE_BANNER,
+            typeReference = object : TypeReference<RedisNotice>() {}
+        )
+    }
+
+    private suspend fun findAndDeleteAllBanner(account: Account) {
+        noticeRepository.findAllByIsBannerIsTrueAndIsDraftIsFalseAndIsScheduleIsFalse().map { notice ->
+            notice.isBanner = false
+            notice.setUpdateInfo(account)
+            return@map notice
+        }.toList().also { noticeList ->
+            noticeRepository.saveAll(noticeList).collect()
         }
     }
 
@@ -146,16 +184,38 @@ class NoticeService(
             request.validate()
         },
         action = {
-            fileService.addFileInfo(fileRequest = fileRequest, account = account, request = request)
-
-            noticeRepository.findById(id)?.let {
-                val isChange: Boolean = it.isFixTop != request.isFixTop
-                it.setUpdateInfo(request = request, account = account)
-                noticeRepository.save(it).toResponse().also {
-                    if (isChange) {
-                        applyToRedis()
+            coroutineScope {
+                fileRequest?.let {
+                    it.setKeys().also {
+                        launch {
+                            fileService.addFileInfo(fileRequest = fileRequest, account = account, request = request)
+                        }
                     }
-                    applyTop5ToRedis()
+                }
+
+                noticeRepository.findById(id)?.let {
+                    val isBannerChange: Boolean = it.isBanner != request.isBanner
+                    val isChange: Boolean = it.isFixTop != request.isFixTop
+
+                    if (isBannerChange) {
+                        when (request.isBanner) {
+                            true -> {
+                                findAndDeleteAllBanner(account)
+                                addBannerToRedis(it.toRedisEntity())
+                            }
+
+                            false -> {
+                                deleteBannerFromRedis()
+                            }
+                        }
+                    }
+                    it.setUpdateInfo(request = request, account = account, fileRequest = fileRequest)
+                    noticeRepository.save(it).toResponse().also {
+                        if (isChange) {
+                            applyToRedis()
+                        }
+                        applyTop5ToRedis()
+                    }
                 }
             }
         }
@@ -185,12 +245,9 @@ class NoticeService(
         noticeRepository.findById(id)?.let {
             it.isBanner = true
             it.setUpdateInfo(account)
+            findAndDeleteAllBanner(account)
             noticeRepository.save(it).toResponse().also { response ->
-                redisRepository.addOrUpdateRBucket(
-                    bucketKey = CMS_NOTICE_BANNER,
-                    value = response.toRedisEntity(),
-                    typeReference = object : TypeReference<RedisNotice>() {}
-                )
+                addBannerToRedis(response.toRedisEntity())
             }
         }
     }
@@ -200,13 +257,7 @@ class NoticeService(
         noticeRepository.findById(id)?.let {
             it.isBanner = false
             it.setUpdateInfo(account)
-            noticeRepository.save(it).toResponse().also { response ->
-                redisRepository.addOrUpdateRBucket(
-                    bucketKey = CMS_NOTICE_BANNER,
-                    value = response.toRedisEntity(),
-                    typeReference = object : TypeReference<RedisNotice>() {}
-                )
-            }
+            noticeRepository.save(it).toResponse().also { deleteBannerFromRedis() }
         }
     }
 }

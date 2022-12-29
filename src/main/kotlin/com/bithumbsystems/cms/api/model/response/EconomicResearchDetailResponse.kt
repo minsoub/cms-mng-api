@@ -1,6 +1,7 @@
 package com.bithumbsystems.cms.api.model.response
 
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsEconomicResearch
+import com.bithumbsystems.cms.persistence.redis.entity.RedisThumbnail
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
@@ -60,37 +61,12 @@ class EconomicResearchDetailResponse(
     val updateDate: LocalDateTime? = null
 )
 
-fun EconomicResearchDetailResponse.toEntity(): CmsEconomicResearch {
-    val entity = CmsEconomicResearch(
-        id = id,
-        title = title,
-        content = content,
-        createAccountId = createAccountId,
-        createAccountEmail = createAccountEmail,
-        createDate = createDate
-    )
-    entity.isFixTop = isFixTop
-    entity.isShow = isShow
-    entity.isDelete = isDelete
-    entity.fileId = fileId
-    entity.shareTitle = shareTitle
-    entity.shareDescription = shareDescription
-    entity.shareFileId = shareFileId
-    entity.shareButtonName = shareButtonName
-    entity.isSchedule = isSchedule
-    entity.scheduleDate = scheduleDate
-    entity.isDraft = isDraft
-    entity.readCount = readCount
-    entity.isUseUpdateDate = isUseUpdateDate
-    entity.isAlignTop = isAlignTop
-    entity.screenDate = screenDate
-    entity.thumbnailFileId = thumbnailFileId
-    entity.thumbnailUrl = thumbnailUrl
-    entity.updateAccountId = updateAccountId
-    entity.updateAccountEmail = updateAccountEmail
-    entity.updateDate = updateDate
-    return entity
-}
+fun EconomicResearchDetailResponse.toRedisEntity(): RedisThumbnail = RedisThumbnail(
+    id = id,
+    title = title,
+    thumbnailUrl = thumbnailFileId,
+    screenDate = screenDate ?: createDate
+)
 
 /**
  * CmsEconomicResearch Entity를 EconomicResearchDetailResponse 변환한다.

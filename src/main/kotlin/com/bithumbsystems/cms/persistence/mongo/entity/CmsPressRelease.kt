@@ -3,7 +3,7 @@ package com.bithumbsystems.cms.persistence.mongo.entity
 import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.model.constants.ShareConstants.PRESS_RELEASE_TITLE
 import com.bithumbsystems.cms.api.model.request.PressReleaseRequest
-import com.bithumbsystems.cms.persistence.redis.entity.RedisCommon
+import com.bithumbsystems.cms.persistence.redis.entity.RedisBoard
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.MongoId
 import java.time.LocalDateTime
@@ -68,7 +68,7 @@ fun CmsPressRelease.setUpdateInfo(request: PressReleaseRequest, account: Account
     screenDate = if (isUseUpdateDate) LocalDateTime.now() else null
 }
 
-fun CmsPressRelease.toRedisEntity(): RedisCommon = RedisCommon(
+fun CmsPressRelease.toRedisEntity(): RedisBoard = RedisBoard(
     id = id,
     title = title,
     screenDate = screenDate ?: createDate
