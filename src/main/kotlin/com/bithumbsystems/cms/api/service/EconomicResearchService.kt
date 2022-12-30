@@ -22,6 +22,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.query.Criteria
@@ -50,14 +51,21 @@ class EconomicResearchService(
             request.validate()
         },
         action = {
-            fileService.addFileInfo(fileRequest = fileRequest, account = account, request = request)
-            uploadThumbnailFile(fileRequest, account, request) // todo
+            coroutineScope {
+                fileRequest?.let {
+                    it.setKeys().also {
+                        launch {
+                            fileService.addFileInfo(fileRequest = fileRequest, account = account)
+                        }
+                        request.setCreateInfo(fileRequest = fileRequest, account = account)
+                        request.thumbnailFileId = fileRequest.thumbnailFileKey
+                    }
+                } ?: request.setCreateInfo(account)
 
-            request.setCreateInfo(account)
-
-            economicResearchRepository.save(request.toEntity()).toResponse().also {
-                if (it.isFixTop) {
-                    applyToRedis()
+                economicResearchRepository.save(request.toEntity()).toResponse().also {
+                    if (it.isFixTop) {
+                        applyToRedis()
+                    }
                 }
             }
         }
@@ -128,32 +136,26 @@ class EconomicResearchService(
             request.validate()
         },
         action = {
-            fileService.addFileInfo(fileRequest = fileRequest, account = account, request = request)
-            uploadThumbnailFile(fileRequest, account, request) // todo
-
-            economicResearchRepository.findById(id)?.let {
-                val isChange: Boolean = it.isFixTop != request.isFixTop
-                it.setUpdateInfo(request = request, account = account)
-                economicResearchRepository.save(it).toResponse().also {
-                    if (isChange) {
-                        applyToRedis()
+            coroutineScope {
+                fileRequest?.let {
+                    it.setKeys().also {
+                        launch {
+                            fileService.addFileInfo(fileRequest = fileRequest, account = account)
+                        }
+                    }
+                }
+                economicResearchRepository.findById(id)?.let {
+                    val isChange: Boolean = it.isFixTop != request.isFixTop
+                    it.setUpdateInfo(request = request, account = account, fileRequest = fileRequest)
+                    economicResearchRepository.save(it).toResponse().also {
+                        if (isChange) {
+                            applyToRedis()
+                        }
                     }
                 }
             }
         }
     )
-
-    private suspend fun uploadThumbnailFile(
-        fileRequest: FileRequest?,
-        account: Account,
-        request: EconomicResearchRequest
-    ) {
-        fileRequest?.thumbnailFile?.let { thumbnailFile ->
-            fileService.addFileInfo(file = thumbnailFile, account = account, fileSize = null).component1()?.let { fileResponse ->
-                request.thumbnailFileId = fileResponse.id
-            }
-        }
-    }
 
     @Transactional
     suspend fun deleteEconomicResearch(id: String, account: Account): Result<EconomicResearchDetailResponse?, ErrorData> = executeIn {

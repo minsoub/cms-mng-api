@@ -1,9 +1,10 @@
 package com.bithumbsystems.cms.persistence.mongo.entity
 
 import com.bithumbsystems.cms.api.config.resolver.Account
-import com.bithumbsystems.cms.api.model.constants.ShareConstants.NOTICE_TITLE
+import com.bithumbsystems.cms.api.model.constants.ShareConstants.INVEST_WARNING_TITLE
+import com.bithumbsystems.cms.api.model.request.FileRequest
 import com.bithumbsystems.cms.api.model.request.InvestWarningRequest
-import com.bithumbsystems.cms.persistence.redis.entity.RedisInvestWarning
+import com.bithumbsystems.cms.persistence.redis.entity.RedisBoard
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.MongoId
 import java.time.LocalDateTime
@@ -45,17 +46,17 @@ fun CmsInvestWarning.setUpdateInfo(account: Account) {
     updateDate = LocalDateTime.now()
 }
 
-fun CmsInvestWarning.setUpdateInfo(request: InvestWarningRequest, account: Account) {
+fun CmsInvestWarning.setUpdateInfo(request: InvestWarningRequest, account: Account, fileRequest: FileRequest?) {
     title = request.title
     isFixTop = request.isFixTop
     isShow = request.isShow
     isDelete = request.isDelete
     content = request.content
-    fileId = request.fileId
+    fileId = fileRequest?.fileKey ?: request.fileId
     shareTitle = request.shareTitle ?: title
     shareDescription = request.shareDescription
-    shareFileId = request.shareFileId
-    shareButtonName = request.shareButtonName ?: NOTICE_TITLE
+    shareFileId = fileRequest?.shareFileKey ?: request.shareFileId
+    shareButtonName = request.shareButtonName ?: INVEST_WARNING_TITLE
     isSchedule = request.isSchedule
     scheduleDate = request.scheduleDate
     isDraft = request.isDraft
@@ -68,7 +69,7 @@ fun CmsInvestWarning.setUpdateInfo(request: InvestWarningRequest, account: Accou
     screenDate = if (isUseUpdateDate) LocalDateTime.now() else null
 }
 
-fun CmsInvestWarning.toRedisEntity(): RedisInvestWarning = RedisInvestWarning(
+fun CmsInvestWarning.toRedisEntity(): RedisBoard = RedisBoard(
     id = id,
     title = title,
     screenDate = screenDate ?: createDate

@@ -1,6 +1,7 @@
 package com.bithumbsystems.cms.api.model.response
 
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsInvestWarning
+import com.bithumbsystems.cms.persistence.redis.entity.RedisBoard
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
@@ -56,35 +57,11 @@ class InvestWarningDetailResponse(
     val updateDate: LocalDateTime? = null
 )
 
-fun InvestWarningDetailResponse.toEntity(): CmsInvestWarning {
-    val entity = CmsInvestWarning(
-        id = id,
-        title = title,
-        content = content,
-        createAccountId = createAccountId,
-        createAccountEmail = createAccountEmail,
-        createDate = createDate
-    )
-    entity.isFixTop = isFixTop
-    entity.isShow = isShow
-    entity.isDelete = isDelete
-    entity.fileId = fileId
-    entity.shareTitle = shareTitle
-    entity.shareDescription = shareDescription
-    entity.shareFileId = shareFileId
-    entity.shareButtonName = shareButtonName
-    entity.isSchedule = isSchedule
-    entity.scheduleDate = scheduleDate
-    entity.isDraft = isDraft
-    entity.readCount = readCount
-    entity.isUseUpdateDate = isUseUpdateDate
-    entity.isAlignTop = isAlignTop
-    entity.screenDate = screenDate
-    entity.updateAccountId = updateAccountId
-    entity.updateAccountEmail = updateAccountEmail
-    entity.updateDate = updateDate
-    return entity
-}
+fun InvestWarningDetailResponse.toRedisEntity(): RedisBoard = RedisBoard(
+    id = id,
+    title = title,
+    screenDate = screenDate ?: createDate
+)
 
 /**
  * CmsReviewReport Entity를 ReviewReportDetailResponse 변환한다.

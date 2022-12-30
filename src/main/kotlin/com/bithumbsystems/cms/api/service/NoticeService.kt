@@ -60,7 +60,7 @@ class NoticeService(
                 fileRequest?.let {
                     it.setKeys().also {
                         launch {
-                            fileService.addFileInfo(fileRequest = fileRequest, account = account, request = request)
+                            fileService.addFileInfo(fileRequest = fileRequest, account = account)
                         }
                         request.setCreateInfo(fileRequest = fileRequest, account = account)
                     }
@@ -188,7 +188,7 @@ class NoticeService(
                 fileRequest?.let {
                     it.setKeys().also {
                         launch {
-                            fileService.addFileInfo(fileRequest = fileRequest, account = account, request = request)
+                            fileService.addFileInfo(fileRequest = fileRequest, account = account)
                         }
                     }
                 }

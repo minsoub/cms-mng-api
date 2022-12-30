@@ -70,7 +70,7 @@ fun CmsReviewReport.setUpdateInfo(request: ReviewReportRequest, account: Account
     isUseUpdateDate = request.isUseUpdateDate
     isAlignTop = request.isAlignTop
     screenDate = if (isUseUpdateDate) LocalDateTime.now() else null
-    thumbnailFileId = request.thumbnailFileId
+    thumbnailFileId = fileRequest?.thumbnailFileKey ?: request.thumbnailFileId
     thumbnailUrl = fileRequest?.thumbnailFileKey ?: request.thumbnailUrl
 }
 

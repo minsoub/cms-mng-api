@@ -1,5 +1,6 @@
 package com.bithumbsystems.cms.api.model.request
 
+import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsNoticeCategory
 import io.swagger.v3.oas.annotations.media.Schema
 import javax.validation.constraints.Size
@@ -28,3 +29,8 @@ fun NoticeCategoryRequest.toEntity(): CmsNoticeCategory = CmsNoticeCategory(
     createAccountId = createAccountId,
     createAccountEmail = createAccountEmail
 )
+
+fun NoticeCategoryRequest.setCreateInfo(account: Account) {
+    createAccountEmail = account.email
+    createAccountId = account.accountId
+}

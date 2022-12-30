@@ -55,10 +55,7 @@ class ReviewReportService(
                 fileRequest?.let {
                     it.setKeys().also {
                         launch {
-                            fileService.addFileInfo(fileRequest = fileRequest, account = account, request = request)
-                        }
-                        launch {
-                            uploadThumbnailFile(fileRequest = fileRequest, account = account)
+                            fileService.addFileInfo(fileRequest = fileRequest, account = account)
                         }
                         request.setCreateInfo(fileRequest = fileRequest, account = account)
                         request.thumbnailFileId = fileRequest.thumbnailFileKey
@@ -142,10 +139,7 @@ class ReviewReportService(
                 fileRequest?.let {
                     it.setKeys().also {
                         launch {
-                            fileService.addFileInfo(fileRequest = fileRequest, account = account, request = request)
-                        }
-                        launch {
-                            uploadThumbnailFile(fileRequest = fileRequest, account = account)
+                            fileService.addFileInfo(fileRequest = fileRequest, account = account)
                         }
                     }
                 }
@@ -162,19 +156,6 @@ class ReviewReportService(
             }
         }
     )
-
-    private suspend fun uploadThumbnailFile(
-        fileRequest: FileRequest?,
-        account: Account
-    ) {
-        fileRequest?.let {
-            it.fileKey?.let { fileKey ->
-                it.thumbnailFile?.let { thumbnailFile ->
-                    fileService.addFileInfo(fileKey = fileKey, file = thumbnailFile, account = account, fileSize = null)
-                }
-            }
-        }
-    }
 
     @Transactional
     suspend fun deleteReviewReport(id: String, account: Account): Result<ReviewReportDetailResponse?, ErrorData> = executeIn {

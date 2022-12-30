@@ -5,6 +5,7 @@ import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.model.enums.RedisKeys.CMS_NOTICE_CATEGORY
 import com.bithumbsystems.cms.api.model.request.NoticeCategoryRequest
 import com.bithumbsystems.cms.api.model.request.SearchParams
+import com.bithumbsystems.cms.api.model.request.setCreateInfo
 import com.bithumbsystems.cms.api.model.request.toEntity
 import com.bithumbsystems.cms.api.model.response.*
 import com.bithumbsystems.cms.api.util.QueryUtil.buildCriteria
@@ -40,8 +41,7 @@ class NoticeCategoryService(
      */
     @Transactional
     suspend fun createCategory(request: NoticeCategoryRequest, account: Account): Result<NoticeCategoryDetailResponse?, ErrorData> = executeIn {
-        request.createAccountId = account.accountId
-        request.createAccountEmail = account.email
+        request.setCreateInfo(account)
 
         val entity: CmsNoticeCategory = request.toEntity()
 
