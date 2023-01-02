@@ -16,7 +16,7 @@ version = "0.0.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_17
 val springVersion = "2.6.7"
 val openapiVersion = "1.6.9"
-val awssdkVersion = "2.18.10"
+val awssdkVersion = "2.19.8"
 repositories {
     mavenCentral()
 }

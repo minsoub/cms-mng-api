@@ -53,7 +53,7 @@ class NoticeService(
         account: Account
     ): Result<NoticeDetailResponse?, ErrorData> = executeIn(
         validator = {
-            request.validate() && request.validateNotice()
+            request.validate() && request.validateNotice() && fileRequest?.validate() == true
         },
         action = {
             coroutineScope {
@@ -181,7 +181,7 @@ class NoticeService(
         account: Account
     ): Result<NoticeDetailResponse?, ErrorData> = executeIn(
         validator = {
-            request.validate()
+            request.validate() && request.validateNotice() && fileRequest?.validate() == true
         },
         action = {
             coroutineScope {

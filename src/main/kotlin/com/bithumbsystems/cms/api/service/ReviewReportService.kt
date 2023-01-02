@@ -48,7 +48,7 @@ class ReviewReportService(
         account: Account
     ): Result<ReviewReportDetailResponse?, ErrorData> = executeIn(
         validator = {
-            request.validate()
+            request.validate() && fileRequest?.validate() == true
         },
         action = {
             coroutineScope {
@@ -132,7 +132,7 @@ class ReviewReportService(
         account: Account
     ): Result<ReviewReportDetailResponse?, ErrorData> = executeIn(
         validator = {
-            request.validate()
+            request.validate() && fileRequest?.validate() == true
         },
         action = {
             coroutineScope {

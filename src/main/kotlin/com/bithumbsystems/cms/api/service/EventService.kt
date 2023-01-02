@@ -61,7 +61,7 @@ class EventService(
         account: Account
     ): Result<EventDetailResponse?, ErrorData> = executeIn(
         validator = {
-            request.validate() && request.validateEvent()
+            request.validate() && request.validateEvent() && fileRequest?.validate() == true
         },
         action = {
             coroutineScope {
@@ -144,7 +144,7 @@ class EventService(
         account: Account
     ): Result<EventDetailResponse?, ErrorData> = executeIn(
         validator = {
-            request.validate()
+            request.validate() && request.validateEvent() && fileRequest?.validate() == true
         },
         action = {
             coroutineScope {

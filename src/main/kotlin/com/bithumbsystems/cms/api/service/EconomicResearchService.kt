@@ -48,7 +48,7 @@ class EconomicResearchService(
         account: Account
     ): Result<EconomicResearchDetailResponse?, ErrorData> = executeIn(
         validator = {
-            request.validate()
+            request.validate() && fileRequest?.validate() == true
         },
         action = {
             coroutineScope {
