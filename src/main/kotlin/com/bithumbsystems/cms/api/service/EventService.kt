@@ -24,6 +24,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.reactor.awaitSingleOrNull
 import kotlinx.coroutines.reactor.mono
 import org.apache.poi.ss.usermodel.*
@@ -63,12 +64,20 @@ class EventService(
             request.validate() && request.validateEvent()
         },
         action = {
-            fileService.addFileInfo(fileRequest = fileRequest, account = account, request = request)
-            request.setCreateInfo(account)
+            coroutineScope {
+                fileRequest?.let {
+                    it.setKeys().also {
+                        launch {
+                            fileService.addFileInfo(fileRequest = fileRequest, account = account)
+                        }
+                        request.setCreateInfo(fileRequest = fileRequest, account = account)
+                    }
+                } ?: request.setCreateInfo(account)
 
-            eventRepository.save(request.toEntity()).toResponse().also {
-                if (it.isFixTop) {
-                    applyToRedis()
+                eventRepository.save(request.toEntity()).toResponse().also {
+                    if (it.isFixTop) {
+                        applyToRedis()
+                    }
                 }
             }
         }
@@ -138,14 +147,22 @@ class EventService(
             request.validate()
         },
         action = {
-            fileService.addFileInfo(fileRequest = fileRequest, account = account, request = request)
+            coroutineScope {
+                fileRequest?.let {
+                    it.setKeys().also {
+                        launch {
+                            fileService.addFileInfo(fileRequest = fileRequest, account = account)
+                        }
+                    }
+                }
 
-            eventRepository.findById(id)?.let {
-                val isChange: Boolean = it.isFixTop != request.isFixTop
-                it.setUpdateInfo(request = request, account = account)
-                eventRepository.save(it).toResponse().also {
-                    if (isChange) {
-                        applyToRedis()
+                eventRepository.findById(id)?.let {
+                    val isChange: Boolean = it.isFixTop != request.isFixTop
+                    it.setUpdateInfo(request = request, account = account, fileRequest = fileRequest)
+                    eventRepository.save(it).toResponse().also {
+                        if (isChange) {
+                            applyToRedis()
+                        }
                     }
                 }
             }

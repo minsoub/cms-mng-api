@@ -45,6 +45,7 @@ class InvestWarningControllerTest @Autowired constructor(
     fun `투자유의지정 안내 목록 조회 테스트`() {
         val responseBody: Response<*>? = client.get()
             .uri("/api/v1/mng/cms/invest-warnings")
+            .header("authorization", "Bearer $token")
             .exchange()
             .expectStatus().isOk
             .expectBody(Response::class.java)

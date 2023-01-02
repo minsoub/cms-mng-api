@@ -23,6 +23,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
+import kotlinx.coroutines.launch
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.query.Criteria
@@ -51,14 +52,22 @@ class PressReleaseService(
             request.validate()
         },
         action = {
-            fileService.addFileInfo(fileRequest = fileRequest, account = account, request = request)
-            request.setCreateInfo(account)
+            coroutineScope {
+                fileRequest?.let {
+                    it.setKeys().also {
+                        launch {
+                            fileService.addFileInfo(fileRequest = fileRequest, account = account)
+                        }
+                        request.setCreateInfo(fileRequest = fileRequest, account = account)
+                    }
+                } ?: request.setCreateInfo(account)
 
-            pressReleaseRepository.save(request.toEntity()).toResponse().also {
-                if (it.isFixTop) {
-                    applyToRedis()
+                pressReleaseRepository.save(request.toEntity()).toResponse().also {
+                    if (it.isFixTop) {
+                        applyToRedis()
+                    }
+                    applyTop5ToRedis()
                 }
-                applyTop5ToRedis()
             }
         }
     )
@@ -135,16 +144,24 @@ class PressReleaseService(
             request.validate()
         },
         action = {
-            fileService.addFileInfo(fileRequest = fileRequest, account = account, request = request)
-
-            pressReleaseRepository.findById(id)?.let {
-                val isChange: Boolean = it.isFixTop != request.isFixTop
-                it.setUpdateInfo(request = request, account = account)
-                pressReleaseRepository.save(it).toResponse().also {
-                    if (isChange) {
-                        applyToRedis()
+            coroutineScope {
+                fileRequest?.let {
+                    it.setKeys().also {
+                        launch {
+                            fileService.addFileInfo(fileRequest = fileRequest, account = account)
+                        }
                     }
-                    applyTop5ToRedis()
+                }
+
+                pressReleaseRepository.findById(id)?.let {
+                    val isChange: Boolean = it.isFixTop != request.isFixTop
+                    it.setUpdateInfo(request = request, account = account, fileRequest = fileRequest)
+                    pressReleaseRepository.save(it).toResponse().also {
+                        if (isChange) {
+                            applyToRedis()
+                        }
+                        applyTop5ToRedis()
+                    }
                 }
             }
         }

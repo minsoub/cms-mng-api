@@ -4,7 +4,10 @@ import com.bithumbsystems.cms.api.config.aws.AwsProperties
 import com.bithumbsystems.cms.api.config.operator.ServiceOperator.executeIn
 import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.model.aggregate.FileResult
-import com.bithumbsystems.cms.api.model.request.*
+import com.bithumbsystems.cms.api.model.request.FileInfoRequest
+import com.bithumbsystems.cms.api.model.request.FileRequest
+import com.bithumbsystems.cms.api.model.request.setCreateInfo
+import com.bithumbsystems.cms.api.model.request.toEntity
 import com.bithumbsystems.cms.api.model.response.ErrorData
 import com.bithumbsystems.cms.api.model.response.FileInfoResponse
 import com.bithumbsystems.cms.api.model.response.toResponse
@@ -80,8 +83,7 @@ class FileService(
 
     suspend fun addFileInfo(
         fileRequest: FileRequest?,
-        account: Account,
-        request: CommonBoardRequest
+        account: Account
     ) = executeIn(
         dispatcher = ioDispatcher,
         action = {
@@ -91,7 +93,6 @@ class FileService(
                         it.file?.let { file ->
                             it.fileKey?.let { fileKey ->
                                 addFileInfo(fileKey = fileKey, file = file, account = account, fileSize = null)
-                                request.fileId = fileKey
                             }
                         }
                     }
@@ -100,7 +101,14 @@ class FileService(
                         it.shareFile?.let { shareFile ->
                             it.shareFileKey?.let { shareFileKey ->
                                 addFileInfo(fileKey = shareFileKey, file = shareFile, account = account, fileSize = null)
-                                request.shareFileId = shareFileKey
+                            }
+                        }
+                    }
+
+                    launch {
+                        it.thumbnailFile?.let { thumbnailFile ->
+                            it.thumbnailFileKey?.let { thumbnailFileKey ->
+                                addFileInfo(fileKey = thumbnailFileKey, file = thumbnailFile, account = account, fileSize = null)
                             }
                         }
                     }

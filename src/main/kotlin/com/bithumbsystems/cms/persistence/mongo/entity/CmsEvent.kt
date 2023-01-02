@@ -5,6 +5,7 @@ import com.bithumbsystems.cms.api.model.constants.ShareConstants.EVENT_TITLE
 import com.bithumbsystems.cms.api.model.enums.EventTarget
 import com.bithumbsystems.cms.api.model.enums.EventType
 import com.bithumbsystems.cms.api.model.request.EventRequest
+import com.bithumbsystems.cms.api.model.request.FileRequest
 import com.bithumbsystems.cms.api.model.request.Message
 import com.bithumbsystems.cms.persistence.redis.entity.RedisBoard
 import org.springframework.data.mongodb.core.mapping.Document
@@ -57,16 +58,16 @@ fun CmsEvent.setUpdateInfo(account: Account) {
     updateDate = LocalDateTime.now()
 }
 
-fun CmsEvent.setUpdateInfo(request: EventRequest, account: Account) {
+fun CmsEvent.setUpdateInfo(request: EventRequest, account: Account, fileRequest: FileRequest?) {
     title = request.title
     isFixTop = request.isFixTop
     isShow = request.isShow
     isDelete = request.isDelete
     content = request.content
-    fileId = request.fileId
+    fileId = fileRequest?.fileKey ?: request.fileId
     shareTitle = request.shareTitle ?: title
     shareDescription = request.shareDescription
-    shareFileId = request.shareFileId
+    shareFileId = fileRequest?.shareFileKey ?: request.shareFileId
     shareButtonName = request.shareButtonName ?: EVENT_TITLE
     isSchedule = request.isSchedule
     scheduleDate = request.scheduleDate

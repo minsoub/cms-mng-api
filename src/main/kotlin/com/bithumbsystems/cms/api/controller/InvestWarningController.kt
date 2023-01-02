@@ -115,9 +115,11 @@ class InvestWarningController(
     suspend fun getInvestWarnings(
         @QueryParam
         @Parameter(hidden = true)
-        searchParams: SearchParams
+        searchParams: SearchParams,
+        @Parameter(hidden = true) @CurrentUser
+        account: Account
     ) = execute {
-        investWarningService.getInvestWarnings(searchParams)
+        investWarningService.getInvestWarnings(searchParams = searchParams, account = account)
     }
 
     @GetMapping("/{id}")
