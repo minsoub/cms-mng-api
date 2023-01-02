@@ -56,7 +56,7 @@ class AutoGeneratorProgramConfig(
 
                 val amazonSQSAsync = clientBuilder.buildSqs(awsProperties)
                 val sendMessageRequest = SendMessageRequest(
-                    "${awsProperties.sqsEndPoint}/${awsProperties.sqsProgramQueueName}",
+                    "${awsProperties.sqsEndPoint.trim()}/${awsProperties.sqsProgramQueueName.trim()}",
                     Gson().toJson(program)
                 ).withMessageGroupId(program.siteId).withMessageDeduplicationId(UUID.randomUUID().toString())
 
