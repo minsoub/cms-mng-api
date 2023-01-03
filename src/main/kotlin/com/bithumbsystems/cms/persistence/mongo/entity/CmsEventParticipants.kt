@@ -14,7 +14,7 @@ import java.util.*
 )
 class CmsEventParticipants(
     val eventId: String,
-    val uid: String,
+    var uid: String,
     val isAgree: Boolean = true,
     val createDate: LocalDateTime = LocalDateTime.now(),
     @Indexed(expireAfter = "30d")

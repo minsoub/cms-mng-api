@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository
 @Repository
 interface CmsPressReleaseRepository : CmsCommonRepository<CmsPressRelease> {
 
-    fun findTop5ByIsDraftIsFalseOrderByScreenDateDescCreateDateDesc(): Flow<CmsPressRelease>
+    fun findTop5ByIsShowIsTrueAndIsDeleteIsFalseAndIsDraftIsFalseOrderByScreenDateDescCreateDateDesc(): Flow<CmsPressRelease>
 }

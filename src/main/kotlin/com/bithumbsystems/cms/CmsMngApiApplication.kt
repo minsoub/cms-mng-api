@@ -1,13 +1,15 @@
 package com.bithumbsystems.cms
 
+import io.awspring.cloud.autoconfigure.messaging.SqsAutoConfiguration
 import org.redisson.spring.starter.RedissonAutoConfiguration
+import org.springframework.boot.SpringApplication
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.autoconfigure.data.mongo.MongoDataAutoConfiguration
 import org.springframework.boot.autoconfigure.mongo.MongoAutoConfiguration
 import org.springframework.boot.autoconfigure.mongo.MongoReactiveAutoConfiguration
 import org.springframework.boot.autoconfigure.mongo.embedded.EmbeddedMongoAutoConfiguration
+import org.springframework.boot.context.ApplicationPidFileWriter
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan
-import org.springframework.boot.runApplication
 
 @SpringBootApplication(
     exclude = [
@@ -15,7 +17,8 @@ import org.springframework.boot.runApplication
         MongoReactiveAutoConfiguration::class,
         MongoDataAutoConfiguration::class,
         EmbeddedMongoAutoConfiguration::class,
-        RedissonAutoConfiguration::class
+        RedissonAutoConfiguration::class,
+        SqsAutoConfiguration::class
     ]
 )
 @ConfigurationPropertiesScan(
@@ -24,5 +27,8 @@ import org.springframework.boot.runApplication
 class CmsMngApiApplication
 
 fun main(args: Array<String>) {
-    runApplication<CmsMngApiApplication>(*args)
+    SpringApplication(CmsMngApiApplication::class.java).run {
+        this.addListeners(ApplicationPidFileWriter())
+        this.run(*args)
+    }
 }

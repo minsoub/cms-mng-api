@@ -1,12 +1,12 @@
 package com.bithumbsystems.cms.api.model.response
 
-import com.bithumbsystems.cms.persistence.mongo.entity.CmsInvestWarning
+import com.bithumbsystems.cms.persistence.mongo.entity.CmsInvestmentWarning
 import com.bithumbsystems.cms.persistence.redis.entity.RedisBoard
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
 @Schema(description = "투자유의지정 안내 상세 응답")
-class InvestWarningDetailResponse(
+class InvestmentWarningDetailResponse(
     @Schema(description = "아이디")
     val id: String,
     @Schema(description = "제목", example = "제목")
@@ -57,7 +57,7 @@ class InvestWarningDetailResponse(
     val updateDate: LocalDateTime? = null
 )
 
-fun InvestWarningDetailResponse.toRedisEntity(): RedisBoard = RedisBoard(
+fun InvestmentWarningDetailResponse.toRedisEntity(): RedisBoard = RedisBoard(
     id = id,
     title = title,
     screenDate = screenDate ?: createDate
@@ -67,7 +67,7 @@ fun InvestWarningDetailResponse.toRedisEntity(): RedisBoard = RedisBoard(
  * CmsReviewReport Entity를 ReviewReportDetailResponse 변환한다.
  * @return 마스킹 처리되지 않은 응답
  */
-fun CmsInvestWarning.toResponse(): InvestWarningDetailResponse = InvestWarningDetailResponse(
+fun CmsInvestmentWarning.toResponse(): InvestmentWarningDetailResponse = InvestmentWarningDetailResponse(
     id = id,
     title = title,
     content = content,

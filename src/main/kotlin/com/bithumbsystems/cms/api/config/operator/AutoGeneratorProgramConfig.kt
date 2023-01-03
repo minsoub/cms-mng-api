@@ -1,8 +1,8 @@
 package com.bithumbsystems.cms.api.config.operator
 
+import com.amazonaws.services.sqs.AmazonSQSAsync
 import com.amazonaws.services.sqs.model.SendMessageRequest
 import com.bithumbsystems.cms.api.config.aws.AwsProperties
-import com.bithumbsystems.cms.api.config.client.ClientBuilder
 import com.bithumbsystems.cms.api.config.web.ApplicationProperties
 import com.bithumbsystems.cms.api.util.Logger
 import com.bithumbsystems.cms.persistence.mongo.entity.Program
@@ -22,7 +22,7 @@ import java.util.*
 class AutoGeneratorProgramConfig(
     private val requestMappingHandlerMapping: RequestMappingHandlerMapping,
     private val applicationProperties: ApplicationProperties,
-    private val clientBuilder: ClientBuilder,
+    private val amazonSQS: AmazonSQSAsync,
     private val awsProperties: AwsProperties
 ) {
     private val logger by Logger()
@@ -54,13 +54,12 @@ class AutoGeneratorProgramConfig(
                     siteId = applicationProperties.siteId
                 )
 
-                val amazonSQSAsync = clientBuilder.buildSqs(awsProperties)
                 val sendMessageRequest = SendMessageRequest(
                     "${awsProperties.sqsEndPoint.trim()}/${awsProperties.sqsProgramQueueName.trim()}",
                     Gson().toJson(program)
                 ).withMessageGroupId(program.siteId).withMessageDeduplicationId(UUID.randomUUID().toString())
 
-                amazonSQSAsync.sendMessage(sendMessageRequest)
+                amazonSQS.sendMessage(sendMessageRequest)
             }
     }
 }

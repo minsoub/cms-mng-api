@@ -1,7 +1,7 @@
 package com.bithumbsystems.cms.api.controller
 
 import com.bithumbsystems.cms.api.model.enums.ResponseCode
-import com.bithumbsystems.cms.api.model.request.InvestWarningRequest
+import com.bithumbsystems.cms.api.model.request.InvestmentWarningRequest
 import com.bithumbsystems.cms.api.model.response.Response
 import org.amshove.kluent.`should be`
 import org.junit.jupiter.api.*
@@ -13,16 +13,16 @@ import org.springframework.web.reactive.function.BodyInserters
 import reactor.core.publisher.Mono
 import java.util.*
 
-class InvestWarningControllerTest @Autowired constructor(
+class InvestmentWarningControllerTest @Autowired constructor(
     private val client: WebTestClient
 ) : CommonControllerTest() {
 
     @Test
     @Order(1)
     fun `투자유의지정 안내 등록 테스트`() {
-        val body = InvestWarningRequest(title = "투자유의지정 안내 제목", content = "투자유의지정 안내 본문")
+        val body = InvestmentWarningRequest(title = "투자유의지정 안내 제목", content = "투자유의지정 안내 본문")
         val bodyBuilder: MultipartBodyBuilder = MultipartBodyBuilder().apply {
-            this.asyncPart("request", Mono.just(body), InvestWarningRequest::class.java)
+            this.asyncPart("request", Mono.just(body), InvestmentWarningRequest::class.java)
         }
 
         val responseBody: Response<*>? = client.post()
@@ -73,9 +73,9 @@ class InvestWarningControllerTest @Autowired constructor(
     @Test
     @Order(4)
     fun `투자유의지정 안내 수정 테스트`() {
-        val body = InvestWarningRequest(title = "투자유의지정 안내 제목2", content = "투자유의지정 안내 본문2")
+        val body = InvestmentWarningRequest(title = "투자유의지정 안내 제목2", content = "투자유의지정 안내 본문2")
         val bodyBuilder: MultipartBodyBuilder = MultipartBodyBuilder().apply {
-            this.asyncPart("request", Mono.just(body), InvestWarningRequest::class.java)
+            this.asyncPart("request", Mono.just(body), InvestmentWarningRequest::class.java)
         }
 
         val responseBody: Response<*>? = client.put()

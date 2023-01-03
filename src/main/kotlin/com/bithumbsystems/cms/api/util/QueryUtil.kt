@@ -82,8 +82,8 @@ object QueryUtil {
         }
 
         letIfAllNotNull(startDate, endDate) {
-            andCriteriaList.add(Criteria.where("create_date").gte(startDate!!))
-            andCriteriaList.add(Criteria.where("create_date").lte(endDate!!))
+            andCriteriaList.add(Criteria.where("create_date").gte(startDate!!.atTime(0, 0, 0, 0)))
+            andCriteriaList.add(Criteria.where("create_date").lte(endDate!!.atTime(23, 59, 59, 999)))
         }
 
         isFixTop?.let {

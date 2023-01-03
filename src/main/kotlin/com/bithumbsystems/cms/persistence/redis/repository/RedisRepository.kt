@@ -11,7 +11,6 @@ import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.redisson.api.*
 import org.redisson.codec.TypedJsonJacksonCodec
 import org.springframework.stereotype.Service
-import reactor.core.publisher.Mono
 import java.util.concurrent.TimeUnit
 
 @Service
@@ -153,12 +152,12 @@ class RedisRepository(
      * @param updateValue 수정할 값
      * @param clazz 수정할 데이터의 클래스
      */
-    suspend fun <T> updateRListValueById(listKey: RedisKeys, id: String, updateValue: T, clazz: Class<T>): Result<Boolean?, Throwable> =
+    suspend fun <T> updateRListValueById(listKey: RedisKeys, id: String, updateValue: T, clazz: Class<T>): Result<Void?, Throwable> =
         withLock(lockName = listKey) {
             getIndexAndRListById(listKey, clazz, id).run {
                 this.second?.let { index: Int ->
                     this.first.remove(index).awaitSingleOrNull()
-                    this.first.add(index, updateValue) as Mono<Boolean>
+                    this.first.add(index, updateValue)
                 }
             }?.awaitSingleOrNull()
         }

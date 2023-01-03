@@ -237,7 +237,6 @@ class RedisRepositoryTest @Autowired constructor(
     fun updateRListValueById() = runTest {
         target.name = "테스트2"
         redisRepository.updateRListValueById(listKey = LIST_TEST_KEY, id = id, updateValue = target, clazz = TestData::class.java)
-            .component1() `should be` true
 
         val item: TestData? = redisRepository.getRListValue(listKey = LIST_TEST_KEY, clazz = TestData::class.java)?.find { it.id == id }
         item?.id.equals(id) `should be` true

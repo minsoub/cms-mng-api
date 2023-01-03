@@ -1,13 +1,13 @@
 package com.bithumbsystems.cms.api.model.request
 
 import com.bithumbsystems.cms.api.model.constants.ShareConstants.INVEST_WARNING_TITLE
-import com.bithumbsystems.cms.persistence.mongo.entity.CmsInvestWarning
+import com.bithumbsystems.cms.persistence.mongo.entity.CmsInvestmentWarning
 import io.swagger.v3.oas.annotations.media.Schema
 import javax.validation.constraints.NotBlank
 import javax.validation.constraints.Size
 
 @Schema(description = "투자유의 요청")
-class InvestWarningRequest(
+class InvestmentWarningRequest(
     @Schema(description = "제목", example = "제목", required = true, maxLength = 100)
     @field:Size(max = 100)
     override val title: String,
@@ -16,8 +16,8 @@ class InvestWarningRequest(
     override val content: String
 ) : CommonBoardRequest(title = title, content = content)
 
-fun InvestWarningRequest.toEntity(): CmsInvestWarning {
-    val entity = CmsInvestWarning(
+fun InvestmentWarningRequest.toEntity(): CmsInvestmentWarning {
+    val entity = CmsInvestmentWarning(
         title = title,
         content = content,
         createAccountId = createAccountId,

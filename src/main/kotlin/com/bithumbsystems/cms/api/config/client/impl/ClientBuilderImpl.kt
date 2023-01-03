@@ -34,6 +34,8 @@ class ClientBuilderImpl : ClientBuilder {
             .endpointOverride(URI.create(awsProperties.kmsEndPoint)).build()
 
     override fun buildRedis(config: Config): RedissonReactiveClient = Redisson.create(config).reactive()
+
+    @Bean
     override fun buildSqs(awsProperties: AwsProperties): AmazonSQSAsync {
         val endpointConfig = AwsClientBuilder.EndpointConfiguration(
             awsProperties.sqsEndPoint,

@@ -1,12 +1,12 @@
 package com.bithumbsystems.cms.api.model.response
 
 import com.bithumbsystems.cms.api.util.MaskingUtil.getEmailMask
-import com.bithumbsystems.cms.persistence.mongo.entity.CmsInvestWarning
+import com.bithumbsystems.cms.persistence.mongo.entity.CmsInvestmentWarning
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 
 @Schema(description = "투자유의지정 안내 목록 응답")
-class InvestWarningResponse(
+class InvestmentWarningResponse(
     @Schema(description = "아이디", example = "b40f760a9ce84702905347b1e0d98aeb")
     val id: String,
     @Schema(description = "제목", example = "제목")
@@ -30,10 +30,10 @@ class InvestWarningResponse(
 )
 
 /**
- * CmsInvestWarning Entity를 InvestWarningResponse 변환한다.
+ * CmsInvestmentWarning Entity를 InvestmentWarningResponse 변환한다.
  * @return 마스킹 처리된 응답
  */
-fun CmsInvestWarning.toMaskingResponse(): InvestWarningResponse = InvestWarningResponse(
+fun CmsInvestmentWarning.toMaskingResponse(): InvestmentWarningResponse = InvestmentWarningResponse(
     id = id,
     title = title,
     isFixTop = isFixTop,
@@ -46,7 +46,7 @@ fun CmsInvestWarning.toMaskingResponse(): InvestWarningResponse = InvestWarningR
     updateDate = updateDate
 )
 
-fun CmsInvestWarning.toDraftResponse(): InvestWarningResponse = InvestWarningResponse(
+fun CmsInvestmentWarning.toDraftResponse(): InvestmentWarningResponse = InvestmentWarningResponse(
     id = id,
     title = title,
     isFixTop = isFixTop,

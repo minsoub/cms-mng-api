@@ -232,9 +232,11 @@ class EventController(
         @PathVariable id: String,
         @Parameter(name = "reason", description = "다운로드 사유")
         @RequestParam(required = true)
-        reason: String
+        reason: String,
+        @Parameter(hidden = true) @CurrentUser
+        account: Account
     ): Mono<ResponseEntity<InputStreamResource>> {
-        return eventService.downloadEventExcel(eventId = id, reason = reason) // todo 파일명
+        return eventService.downloadEventExcel(eventId = id, reason = reason, account = account) // todo 파일명
             .flatMap {
                 Mono.just(
                     ResponseEntity.ok().cacheControl(CacheControl.noCache())

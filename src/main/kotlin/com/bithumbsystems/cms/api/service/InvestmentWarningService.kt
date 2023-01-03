@@ -11,7 +11,7 @@ import com.bithumbsystems.cms.api.util.QueryUtil.buildSort
 import com.bithumbsystems.cms.api.util.withoutDraft
 import com.bithumbsystems.cms.persistence.mongo.entity.setUpdateInfo
 import com.bithumbsystems.cms.persistence.mongo.entity.toRedisEntity
-import com.bithumbsystems.cms.persistence.mongo.repository.CmsInvestWarningRepository
+import com.bithumbsystems.cms.persistence.mongo.repository.CmsInvestmentWarningRepository
 import com.bithumbsystems.cms.persistence.redis.entity.RedisBoard
 import com.bithumbsystems.cms.persistence.redis.repository.RedisRepository
 import com.fasterxml.jackson.core.type.TypeReference
@@ -29,10 +29,10 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 
 @Service
-class InvestWarningService(
-    private val investWarningRepository: CmsInvestWarningRepository,
+class InvestmentWarningService(
+    private val investmentWarningRepository: CmsInvestmentWarningRepository,
     private val fileService: FileService,
-    private val redisRepository: RedisRepository
+    private val redisRepository: RedisRepository,
 ) {
 
     /**
@@ -41,11 +41,11 @@ class InvestWarningService(
      * @param fileRequest 첨부 파일 및 공유 태그 파일
      */
     @Transactional
-    suspend fun createInvestWarning(
-        request: InvestWarningRequest,
+    suspend fun createInvestmentWarning(
+        request: InvestmentWarningRequest,
         fileRequest: FileRequest?,
         account: Account
-    ): Result<InvestWarningDetailResponse?, ErrorData> = executeIn(
+    ): Result<InvestmentWarningDetailResponse?, ErrorData> = executeIn(
         validator = {
             request.validate() && fileRequest?.validate() == true
         },
@@ -60,7 +60,7 @@ class InvestWarningService(
                     }
                 } ?: request.setCreateInfo(account)
 
-                investWarningRepository.save(request.toEntity()).toResponse().also {
+                investmentWarningRepository.save(request.toEntity()).toResponse().also {
                     if (it.isFixTop) {
                         applyToRedis()
                     }
@@ -70,7 +70,7 @@ class InvestWarningService(
     )
 
     private suspend fun applyToRedis() {
-        investWarningRepository.getFixItems().map { item -> item.toRedisEntity() }.toList().also { totalList ->
+        investmentWarningRepository.getFixItems().map { item -> item.toRedisEntity() }.toList().also { totalList ->
             redisRepository.addOrUpdateRBucket(
                 bucketKey = CMS_INVESTMENT_WARNING_FIX,
                 value = totalList,
@@ -79,53 +79,54 @@ class InvestWarningService(
         }
     }
 
-    suspend fun getInvestWarnings(searchParams: SearchParams, account: Account): Result<ListResponse<InvestWarningResponse>?, ErrorData> = executeIn {
-        coroutineScope {
-            var criteria: Criteria = searchParams.buildCriteria(isFixTop = false, isDelete = false)
-            val defaultSort: Sort = buildSort()
+    suspend fun getInvestmentWarnings(searchParams: SearchParams, account: Account): Result<ListResponse<InvestmentWarningResponse>?, ErrorData> =
+        executeIn {
+            coroutineScope {
+                var criteria: Criteria = searchParams.buildCriteria(isFixTop = false, isDelete = false)
+                val defaultSort: Sort = buildSort()
 
-            val drafts: Deferred<List<InvestWarningResponse>> = async {
-                investWarningRepository.findAllByCriteria(
-                    criteria = QueryUtil.buildCriteriaForDraft(account.accountId),
-                    pageable = Pageable.unpaged(),
-                    sort = QueryUtil.buildSortForDraft()
+                val drafts: Deferred<List<InvestmentWarningResponse>> = async {
+                    investmentWarningRepository.findAllByCriteria(
+                        criteria = QueryUtil.buildCriteriaForDraft(account.accountId),
+                        pageable = Pageable.unpaged(),
+                        sort = QueryUtil.buildSortForDraft()
+                    )
+                        .map { it.toDraftResponse() }
+                        .toList()
+                }
+
+                val investmentWarnings: Deferred<List<InvestmentWarningResponse>> = async {
+                    investmentWarningRepository.findAllByCriteria(
+                        criteria = criteria.withoutDraft(),
+                        pageable = Pageable.unpaged(),
+                        sort = defaultSort
+                    )
+                        .map { it.toMaskingResponse() }
+                        .toList()
+                }
+
+                val top: Deferred<List<InvestmentWarningResponse>> = async {
+                    criteria = searchParams.buildCriteria(isFixTop = true, isDelete = false)
+                    investmentWarningRepository.findAllByCriteria(criteria = criteria, pageable = Pageable.unpaged(), sort = defaultSort)
+                        .map { it.toMaskingResponse() }
+                        .toList()
+                }
+
+                ListResponse(
+                    contents = top.await().plus(drafts.await()).plus(investmentWarnings.await()),
+                    totalCounts = top.await().size.toLong().plus(drafts.await().size.toLong()).plus(investmentWarnings.await().size.toLong())
                 )
-                    .map { it.toDraftResponse() }
-                    .toList()
             }
-
-            val investWarnings: Deferred<List<InvestWarningResponse>> = async {
-                investWarningRepository.findAllByCriteria(
-                    criteria = criteria.withoutDraft(),
-                    pageable = Pageable.unpaged(),
-                    sort = defaultSort
-                )
-                    .map { it.toMaskingResponse() }
-                    .toList()
-            }
-
-            val top: Deferred<List<InvestWarningResponse>> = async {
-                criteria = searchParams.buildCriteria(isFixTop = true, isDelete = false)
-                investWarningRepository.findAllByCriteria(criteria = criteria, pageable = Pageable.unpaged(), sort = defaultSort)
-                    .map { it.toMaskingResponse() }
-                    .toList()
-            }
-
-            ListResponse(
-                contents = top.await().plus(drafts.await()).plus(investWarnings.await()),
-                totalCounts = top.await().size.toLong().plus(drafts.await().size.toLong()).plus(investWarnings.await().size.toLong())
-            )
         }
-    }
 
-    suspend fun getInvestWarning(id: String): Result<InvestWarningDetailResponse?, ErrorData> = executeIn {
-        investWarningRepository.findById(id)?.toResponse()
+    suspend fun getInvestmentWarning(id: String): Result<InvestmentWarningDetailResponse?, ErrorData> = executeIn {
+        investmentWarningRepository.findById(id)?.toResponse()
     }
 
     @Transactional
-    suspend fun updateInvestWarning(
+    suspend fun updateInvestmentWarning(
         id: String,
-        request: InvestWarningRequest,
+        request: InvestmentWarningRequest,
         fileRequest: FileRequest?,
         account: Account
     ) = executeIn(
@@ -142,10 +143,10 @@ class InvestWarningService(
                     }
                 }
 
-                investWarningRepository.findById(id)?.let {
+                investmentWarningRepository.findById(id)?.let {
                     val isChange: Boolean = it.isFixTop != request.isFixTop
                     it.setUpdateInfo(request = request, account = account, fileRequest = fileRequest)
-                    investWarningRepository.save(it).toResponse().also {
+                    investmentWarningRepository.save(it).toResponse().also {
                         if (isChange) {
                             applyToRedis()
                         }
@@ -156,14 +157,14 @@ class InvestWarningService(
     )
 
     @Transactional
-    suspend fun deleteInvestWarning(id: String, account: Account): Result<InvestWarningDetailResponse?, ErrorData> = executeIn {
-        investWarningRepository.findById(id)?.let {
+    suspend fun deleteInvestmentWarning(id: String, account: Account): Result<InvestmentWarningDetailResponse?, ErrorData> = executeIn {
+        investmentWarningRepository.findById(id)?.let {
             when (it.isDelete) {
                 true -> it.toResponse()
                 false -> {
                     it.isDelete = true
                     it.setUpdateInfo(account)
-                    investWarningRepository.save(it).toResponse().also { response ->
+                    investmentWarningRepository.save(it).toResponse().also { response ->
                         if (response.isFixTop) {
                             applyToRedis()
                         }

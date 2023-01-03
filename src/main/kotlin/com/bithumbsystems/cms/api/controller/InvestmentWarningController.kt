@@ -5,11 +5,11 @@ import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.config.resolver.CurrentUser
 import com.bithumbsystems.cms.api.config.resolver.QueryParam
 import com.bithumbsystems.cms.api.model.request.FileRequest
-import com.bithumbsystems.cms.api.model.request.InvestWarningRequest
+import com.bithumbsystems.cms.api.model.request.InvestmentWarningRequest
 import com.bithumbsystems.cms.api.model.request.SearchParams
-import com.bithumbsystems.cms.api.model.response.InvestWarningDetailResponse
-import com.bithumbsystems.cms.api.model.response.InvestWarningResponse
-import com.bithumbsystems.cms.api.service.InvestWarningService
+import com.bithumbsystems.cms.api.model.response.InvestmentWarningDetailResponse
+import com.bithumbsystems.cms.api.model.response.InvestmentWarningResponse
+import com.bithumbsystems.cms.api.service.InvestmentWarningService
 import io.swagger.v3.oas.annotations.Operation
 import io.swagger.v3.oas.annotations.Parameter
 import io.swagger.v3.oas.annotations.enums.ParameterIn
@@ -24,8 +24,8 @@ import java.time.LocalDate
 
 @RestController
 @RequestMapping("/invest-warnings")
-class InvestWarningController(
-    private val investWarningService: InvestWarningService
+class InvestmentWarningController(
+    private val investmentWarningService: InvestmentWarningService
 ) {
     /**
      * 투자유의지정 안내 생성
@@ -41,14 +41,14 @@ class InvestWarningController(
             ApiResponse(
                 responseCode = "200",
                 description = "생성 성공",
-                content = [Content(schema = Schema(implementation = InvestWarningDetailResponse::class))]
+                content = [Content(schema = Schema(implementation = InvestmentWarningDetailResponse::class))]
             )
         ]
     )
-    suspend fun createInvestWarning(
+    suspend fun createInvestmentWarning(
         @RequestPart("request")
         @Parameter(content = [Content(encoding = [Encoding(name = "request", contentType = MediaType.APPLICATION_JSON_VALUE)])])
-        request: InvestWarningRequest,
+        request: InvestmentWarningRequest,
         @RequestPart(value = "file", required = false) @Parameter(
             description = "첨부 파일",
             content = [Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE)]
@@ -62,7 +62,7 @@ class InvestWarningController(
         @Parameter(hidden = true) @CurrentUser
         account: Account
     ) = execute {
-        investWarningService.createInvestWarning(
+        investmentWarningService.createInvestmentWarning(
             request = request,
             fileRequest = FileRequest(file = filePart, shareFile = shareFilePart),
             account = account
@@ -78,7 +78,7 @@ class InvestWarningController(
             ApiResponse(
                 responseCode = "200",
                 description = "생성 성공",
-                content = [Content(schema = Schema(implementation = InvestWarningResponse::class))]
+                content = [Content(schema = Schema(implementation = InvestmentWarningResponse::class))]
             )
         ],
         parameters = [
@@ -112,14 +112,14 @@ class InvestWarningController(
             )
         ]
     )
-    suspend fun getInvestWarnings(
+    suspend fun getInvestmentWarnings(
         @QueryParam
         @Parameter(hidden = true)
         searchParams: SearchParams,
         @Parameter(hidden = true) @CurrentUser
         account: Account
     ) = execute {
-        investWarningService.getInvestWarnings(searchParams = searchParams, account = account)
+        investmentWarningService.getInvestmentWarnings(searchParams = searchParams, account = account)
     }
 
     @GetMapping("/{id}")
@@ -131,12 +131,12 @@ class InvestWarningController(
             ApiResponse(
                 responseCode = "200",
                 description = "조회 성공",
-                content = [Content(schema = Schema(implementation = InvestWarningResponse::class))]
+                content = [Content(schema = Schema(implementation = InvestmentWarningResponse::class))]
             )
         ]
     )
-    suspend fun getInvestWarning(@PathVariable id: String) = execute {
-        investWarningService.getInvestWarning(id)
+    suspend fun getInvestmentWarning(@PathVariable id: String) = execute {
+        investmentWarningService.getInvestmentWarning(id)
     }
 
     @PutMapping("/{id}", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
@@ -148,15 +148,15 @@ class InvestWarningController(
             ApiResponse(
                 responseCode = "200",
                 description = "수정 성공",
-                content = [Content(schema = Schema(implementation = InvestWarningResponse::class))]
+                content = [Content(schema = Schema(implementation = InvestmentWarningResponse::class))]
             )
         ]
     )
-    suspend fun updateInvestWarning(
+    suspend fun updateInvestmentWarning(
         @PathVariable id: String,
         @RequestPart("request")
         @Parameter(content = [Content(encoding = [Encoding(name = "request", contentType = MediaType.APPLICATION_JSON_VALUE)])])
-        request: InvestWarningRequest,
+        request: InvestmentWarningRequest,
         @RequestPart(value = "file", required = false) @Parameter(
             description = "첨부 파일",
             content = [Content(mediaType = MediaType.APPLICATION_OCTET_STREAM_VALUE)]
@@ -170,7 +170,7 @@ class InvestWarningController(
         @Parameter(hidden = true) @CurrentUser
         account: Account
     ) = execute {
-        investWarningService.updateInvestWarning(
+        investmentWarningService.updateInvestmentWarning(
             id = id,
             request = request,
             fileRequest = FileRequest(file = filePart, shareFile = shareFilePart),
@@ -187,15 +187,15 @@ class InvestWarningController(
             ApiResponse(
                 responseCode = "200",
                 description = "삭제 성공",
-                content = [Content(schema = Schema(implementation = InvestWarningResponse::class))]
+                content = [Content(schema = Schema(implementation = InvestmentWarningResponse::class))]
             )
         ]
     )
-    suspend fun deleteInvestWarning(
+    suspend fun deleteInvestmentWarning(
         @PathVariable id: String,
         @Parameter(hidden = true) @CurrentUser
         account: Account
     ) = execute {
-        investWarningService.deleteInvestWarning(id = id, account = account)
+        investmentWarningService.deleteInvestmentWarning(id = id, account = account)
     }
 }
