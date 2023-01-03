@@ -47,7 +47,7 @@ class InvestWarningService(
         account: Account
     ): Result<InvestWarningDetailResponse?, ErrorData> = executeIn(
         validator = {
-            request.validate()
+            request.validate() && fileRequest?.validate() == true
         },
         action = {
             coroutineScope {
@@ -130,7 +130,7 @@ class InvestWarningService(
         account: Account
     ) = executeIn(
         validator = {
-            request.validate()
+            request.validate() && fileRequest?.validate() == true
         },
         action = {
             coroutineScope {

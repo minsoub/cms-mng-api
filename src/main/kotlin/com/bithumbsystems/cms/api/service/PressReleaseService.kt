@@ -49,7 +49,7 @@ class PressReleaseService(
         account: Account
     ): Result<PressReleaseDetailResponse?, ErrorData> = executeIn(
         validator = {
-            request.validate()
+            request.validate() && fileRequest?.validate() == true
         },
         action = {
             coroutineScope {
@@ -141,7 +141,7 @@ class PressReleaseService(
         account: Account
     ): Result<PressReleaseDetailResponse?, ErrorData> = executeIn(
         validator = {
-            request.validate()
+            request.validate() && fileRequest?.validate() == true
         },
         action = {
             coroutineScope {
