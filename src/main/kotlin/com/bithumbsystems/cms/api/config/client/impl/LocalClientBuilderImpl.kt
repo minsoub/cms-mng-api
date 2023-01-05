@@ -43,6 +43,7 @@ class LocalClientBuilderImpl : ClientBuilder {
 
     override fun buildRedis(config: Config): RedissonReactiveClient = Redisson.create().reactive()
 
+    @Bean
     override fun buildSqs(awsProperties: AwsProperties): AmazonSQSAsync {
         val endpointConfig = AwsClientBuilder.EndpointConfiguration(
             awsProperties.sqsEndPoint,

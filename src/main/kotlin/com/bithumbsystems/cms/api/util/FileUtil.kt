@@ -39,7 +39,7 @@ fun String.getFileExtensionType(): FileExtensionType =
 
 fun String.getS3Url(): String =
     KotlinAwsProperties.awsProperties.let {
-        "https://${it.bucket}.s3.${it.region}.amazonaws.com/$this"
+        "${it.s3Url}/$this"
     }
 
 fun String.download(s3AsyncClient: S3AsyncClient, bucket: String): Mono<ResponsePublisher<GetObjectResponse>> {

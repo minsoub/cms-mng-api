@@ -1,5 +1,6 @@
 package com.bithumbsystems.cms.api.model.response
 
+import com.bithumbsystems.cms.api.util.getS3Url
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsEconomicResearch
 import com.bithumbsystems.cms.persistence.redis.entity.RedisThumbnail
 import io.swagger.v3.oas.annotations.media.Schema
@@ -64,7 +65,7 @@ class EconomicResearchDetailResponse(
 fun EconomicResearchDetailResponse.toRedisEntity(): RedisThumbnail = RedisThumbnail(
     id = id,
     title = title,
-    thumbnailUrl = thumbnailFileId,
+    thumbnailUrl = thumbnailUrl ?: thumbnailFileId?.getS3Url(),
     screenDate = screenDate ?: createDate
 )
 

@@ -96,13 +96,14 @@ class NoticeService(
     }
 
     private suspend fun applyTop5ToRedis() {
-        noticeRepository.findTop5ByIsDraftIsFalseOrderByScreenDateDescCreateDateDesc().map { it.toRedisEntity() }.toList().also { topList ->
-            redisRepository.addOrUpdateRBucket(
-                bucketKey = CMS_NOTICE_RECENT,
-                value = topList,
-                typeReference = object : TypeReference<List<RedisNotice>>() {}
-            )
-        }
+        noticeRepository.findTop5ByIsShowIsTrueAndIsDeleteIsFalseAndIsDraftIsFalseOrderByScreenDateDescCreateDateDesc().map { it.toRedisEntity() }
+            .toList().also { topList ->
+                redisRepository.addOrUpdateRBucket(
+                    bucketKey = CMS_NOTICE_RECENT,
+                    value = topList,
+                    typeReference = object : TypeReference<List<RedisNotice>>() {}
+                )
+            }
     }
 
     private suspend fun addBannerToRedis(redisEntity: RedisNotice) {

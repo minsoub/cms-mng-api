@@ -6,6 +6,7 @@ cloud:
             auto: ${aws.stack.auto:false}
         s3:
             bucket: ${aws.s3.bucket:cms-dev-s3-bucket}
+            url: https://cms-dev-s3-bucket.s3.ap-northeast-2.amazonaws.com
         region:
             static: ${aws.region:ap-northeast-2}
             auto: ${aws.region.auto:false}
@@ -17,3 +18,5 @@ cloud:
             endpoint: https://sqs.ap-northeast-2.amazonaws.com
             program:
                 queue-name: program_queue_local.fifo
+            reason:
+                queue-name: privacy_reason_queue_local.fifo

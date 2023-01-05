@@ -83,13 +83,14 @@ class PressReleaseService(
     }
 
     private suspend fun applyTop5ToRedis() {
-        pressReleaseRepository.findTop5ByIsDraftIsFalseOrderByScreenDateDescCreateDateDesc().map { it.toRedisEntity() }.toList().also { topList ->
-            redisRepository.addOrUpdateRBucket(
-                bucketKey = CMS_PRESS_RELEASE_RECENT,
-                value = topList,
-                typeReference = object : TypeReference<List<RedisBoard>>() {}
-            )
-        }
+        pressReleaseRepository.findTop5ByIsShowIsTrueAndIsDeleteIsFalseAndIsDraftIsFalseOrderByScreenDateDescCreateDateDesc()
+            .map { it.toRedisEntity() }.toList().also { topList ->
+                redisRepository.addOrUpdateRBucket(
+                    bucketKey = CMS_PRESS_RELEASE_RECENT,
+                    value = topList,
+                    typeReference = object : TypeReference<List<RedisBoard>>() {}
+                )
+            }
     }
 
     suspend fun getPressReleases(searchParams: SearchParams, account: Account): Result<ListResponse<PressReleaseResponse>?, ErrorData> = executeIn {

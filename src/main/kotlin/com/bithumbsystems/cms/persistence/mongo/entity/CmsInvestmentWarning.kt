@@ -3,7 +3,7 @@ package com.bithumbsystems.cms.persistence.mongo.entity
 import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.model.constants.ShareConstants.INVEST_WARNING_TITLE
 import com.bithumbsystems.cms.api.model.request.FileRequest
-import com.bithumbsystems.cms.api.model.request.InvestWarningRequest
+import com.bithumbsystems.cms.api.model.request.InvestmentWarningRequest
 import com.bithumbsystems.cms.persistence.redis.entity.RedisBoard
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.MongoId
@@ -11,7 +11,7 @@ import java.time.LocalDateTime
 import java.util.*
 
 @Document("cms_investment_warning")
-class CmsInvestWarning(
+class CmsInvestmentWarning(
     @MongoId
     val id: String = UUID.randomUUID().toString().replace("-", ""),
     var title: String,
@@ -40,13 +40,13 @@ class CmsInvestWarning(
     var updateDate: LocalDateTime? = null
 }
 
-fun CmsInvestWarning.setUpdateInfo(account: Account) {
+fun CmsInvestmentWarning.setUpdateInfo(account: Account) {
     updateAccountId = account.accountId
     updateAccountEmail = account.email
     updateDate = LocalDateTime.now()
 }
 
-fun CmsInvestWarning.setUpdateInfo(request: InvestWarningRequest, account: Account, fileRequest: FileRequest?) {
+fun CmsInvestmentWarning.setUpdateInfo(request: InvestmentWarningRequest, account: Account, fileRequest: FileRequest?) {
     title = request.title
     isFixTop = request.isFixTop
     isShow = request.isShow
@@ -69,7 +69,7 @@ fun CmsInvestWarning.setUpdateInfo(request: InvestWarningRequest, account: Accou
     screenDate = if (isUseUpdateDate) LocalDateTime.now() else null
 }
 
-fun CmsInvestWarning.toRedisEntity(): RedisBoard = RedisBoard(
+fun CmsInvestmentWarning.toRedisEntity(): RedisBoard = RedisBoard(
     id = id,
     title = title,
     screenDate = screenDate ?: createDate

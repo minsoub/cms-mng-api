@@ -2,7 +2,7 @@ package com.bithumbsystems.cms.persistence.mongo.repository.impl
 
 import com.bithumbsystems.cms.api.util.QueryUtil
 import com.bithumbsystems.cms.api.util.QueryUtil.buildFixAggregation
-import com.bithumbsystems.cms.persistence.mongo.entity.CmsInvestWarning
+import com.bithumbsystems.cms.persistence.mongo.entity.CmsInvestmentWarning
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsBaseRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
@@ -15,21 +15,21 @@ import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Repository
 
 @Repository
-class CmsInvestWarningRepositoryImpl(
+class CmsInvestmentWarningRepositoryImpl(
     private val reactiveMongoTemplate: ReactiveMongoTemplate
-) : CmsBaseRepository<CmsInvestWarning> {
+) : CmsBaseRepository<CmsInvestmentWarning> {
     override suspend fun countAllByCriteria(criteria: Criteria): Long =
-        reactiveMongoTemplate.count(Query.query(criteria), CmsInvestWarning::class.java).awaitSingle()
+        reactiveMongoTemplate.count(Query.query(criteria), CmsInvestmentWarning::class.java).awaitSingle()
 
-    override fun findAllByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<CmsInvestWarning> =
-        reactiveMongoTemplate.find(QueryUtil.buildQuery(criteria, pageable, sort), CmsInvestWarning::class.java)
+    override fun findAllByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<CmsInvestmentWarning> =
+        reactiveMongoTemplate.find(QueryUtil.buildQuery(criteria, pageable, sort), CmsInvestmentWarning::class.java)
             .asFlow()
 
-    override fun getFixItems(): Flow<CmsInvestWarning> {
+    override fun getFixItems(): Flow<CmsInvestmentWarning> {
         return reactiveMongoTemplate.aggregate(
             buildFixAggregation(lookUpOperation = null),
             "cms_investment_warning",
-            CmsInvestWarning::class.java
+            CmsInvestmentWarning::class.java
         ).asFlow()
     }
 }

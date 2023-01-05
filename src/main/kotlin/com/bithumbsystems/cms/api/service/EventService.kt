@@ -1,7 +1,11 @@
 package com.bithumbsystems.cms.api.service
 
+import com.amazonaws.services.sqs.AmazonSQSAsync
+import com.amazonaws.services.sqs.model.SendMessageRequest
+import com.bithumbsystems.cms.api.config.aws.AwsProperties
 import com.bithumbsystems.cms.api.config.operator.ServiceOperator.executeIn
 import com.bithumbsystems.cms.api.config.resolver.Account
+import com.bithumbsystems.cms.api.model.enums.ActionType
 import com.bithumbsystems.cms.api.model.enums.RedisKeys.CMS_EVENT_FIX
 import com.bithumbsystems.cms.api.model.request.*
 import com.bithumbsystems.cms.api.model.response.*
@@ -19,6 +23,7 @@ import com.bithumbsystems.cms.persistence.redis.entity.RedisBoard
 import com.bithumbsystems.cms.persistence.redis.repository.RedisRepository
 import com.fasterxml.jackson.core.type.TypeReference
 import com.github.michaelbull.result.Result
+import com.google.gson.Gson
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
@@ -32,19 +37,26 @@ import org.apache.poi.xssf.streaming.SXSSFWorkbook
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.query.Criteria
+import org.springframework.http.MediaType.APPLICATION_JSON
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import org.springframework.web.reactive.function.client.WebClient
+import org.springframework.web.reactive.function.client.awaitBody
 import reactor.core.publisher.Mono
 import java.io.ByteArrayInputStream
 import java.io.ByteArrayOutputStream
 import java.time.format.DateTimeFormatter
+import java.util.*
 
 @Service
 class EventService(
     private val eventRepository: CmsEventRepository,
     private val eventParticipantsRepository: CmsEventParticipantsRepository,
     private val fileService: FileService,
-    private val redisRepository: RedisRepository
+    private val redisRepository: RedisRepository,
+    private val amazonSQS: AmazonSQSAsync,
+    private val awsProperties: AwsProperties,
+    private val webClient: WebClient,
 ) {
     private val logger by Logger()
 
@@ -187,13 +199,50 @@ class EventService(
         }
     }
 
-    fun downloadEventExcel(eventId: String, reason: String): Mono<ByteArrayInputStream> =
+    suspend fun decryptUid(uid: String): String {
+        webClient.post().uri("")
+            .contentType(APPLICATION_JSON)
+            .bodyValue(uid).accept(APPLICATION_JSON).retrieve().awaitBody<Any>()
+        webClient.get().uri("")
+            .accept(APPLICATION_JSON).retrieve().awaitBody<Any>()
+        return uid
+    } // todo
+
+    fun downloadEventExcel(eventId: String, reason: String, account: Account): Mono<ByteArrayInputStream> =
         mono {
             val eventParticipants: List<EventParticipantsResponse> =
-                eventParticipantsRepository.findAllByEventId(eventId).map { it.toResponse() }.toList() // todo 복호화
-            logger.info("$eventId, $reason")
+                eventParticipantsRepository.findAllByEventId(eventId).map { it.toResponse() }.toList()
+
+            eventParticipantsRepository.findAllByEventId(eventId).map {
+                it.uid = decryptUid(it.uid) // todo 복호화 처리
+                it.toResponse()
+            }.toList()
+
+            val description = "이벤트 참여자 엑셀 다운로드"
+            logger.info("$eventId, $description, $reason")
+
+            sendReason(reason = reason, description = description, account = account)
             createExcelFile(eventParticipants).awaitSingleOrNull()
         }
+
+    private fun sendReason(reason: String, description: String, account: Account) {
+        val eventReasonRequest = EventReasonRequest(
+            accountId = account.accountId,
+            actionType = ActionType.DOWNLOAD,
+            reason = reason,
+            email = account.email,
+            description = description,
+            siteId = account.mySiteId,
+            ip = account.userIp
+        )
+
+        amazonSQS.sendMessage(
+            SendMessageRequest(
+                "${awsProperties.sqsEndPoint.trim()}/${awsProperties.sqsPrivacyReasonQueueName.trim()}",
+                Gson().toJson(eventReasonRequest)
+            ).withMessageGroupId(eventReasonRequest.siteId).withMessageDeduplicationId(UUID.randomUUID().toString())
+        )
+    }
 
     private fun createExcelFile(list: List<EventParticipantsResponse>): Mono<ByteArrayInputStream> {
         return Mono.fromCallable {

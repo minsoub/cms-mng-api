@@ -4,6 +4,7 @@ import com.bithumbsystems.cms.api.config.operator.ServiceOperator.execute
 import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.config.resolver.CurrentUser
 import com.bithumbsystems.cms.api.model.response.FileInfoResponse
+import com.bithumbsystems.cms.api.model.response.ImageFileInfoResponse
 import com.bithumbsystems.cms.api.model.response.Response
 import com.bithumbsystems.cms.api.service.FileService
 import io.swagger.v3.oas.annotations.Operation
@@ -45,11 +46,37 @@ class FileController(
             content = [Content(mediaType = APPLICATION_OCTET_STREAM_VALUE)]
         )
         file: FilePart,
-        @RequestHeader("Content-Length") contentLength: Long,
+        @RequestHeader("Content-Length", required = false) contentLength: Long,
         @Parameter(hidden = true) @CurrentUser
         account: Account
     ): ResponseEntity<Response<Any>> = execute {
         fileService.addFileInfo(file = file, account = account, fileSize = contentLength)
+    }
+
+    @PostMapping("/image", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
+    @Operation(
+        summary = "이미지 파일 업로드",
+        description = "이미지 파일을 업로드 합니다.",
+        tags = ["게시글 > 등록/수정"],
+        responses = [
+            ApiResponse(
+                responseCode = "200",
+                description = "업로드 성공",
+                content = [Content(schema = Schema(implementation = ImageFileInfoResponse::class))]
+            )
+        ]
+    )
+    suspend fun imageFileUpload(
+        @RequestPart(name = "file") @Parameter(
+            description = "File to be uploaded",
+            content = [Content(mediaType = APPLICATION_OCTET_STREAM_VALUE)]
+        )
+        file: FilePart,
+        @RequestHeader("Content-Length", required = false) contentLength: Long,
+        @Parameter(hidden = true) @CurrentUser
+        account: Account
+    ): ResponseEntity<ImageFileInfoResponse> {
+        return ResponseEntity.ok(fileService.addImageFileInfo(file = file, account = account, fileSize = contentLength))
     }
 
     @GetMapping("/{fileKey}", produces = [APPLICATION_OCTET_STREAM_VALUE])

@@ -19,7 +19,7 @@ data class NoticeRequest(
     @field:NotBlank
     override val content: String
 ) : CommonBoardRequest(title = title, content = content) {
-    @Schema(description = "카테고리 아이디 목록", allowableValues = ["true", "false"])
+    @Schema(description = "배너 공지", allowableValues = ["true", "false"])
     var isBanner: Boolean = false
 }
 

@@ -8,9 +8,7 @@ import com.bithumbsystems.cms.api.model.request.FileInfoRequest
 import com.bithumbsystems.cms.api.model.request.FileRequest
 import com.bithumbsystems.cms.api.model.request.setCreateInfo
 import com.bithumbsystems.cms.api.model.request.toEntity
-import com.bithumbsystems.cms.api.model.response.ErrorData
-import com.bithumbsystems.cms.api.model.response.FileInfoResponse
-import com.bithumbsystems.cms.api.model.response.toResponse
+import com.bithumbsystems.cms.api.model.response.*
 import com.bithumbsystems.cms.api.util.*
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsFileInfoRepository
 import com.github.michaelbull.result.Result
@@ -29,40 +27,47 @@ class FileService(
     private val ioDispatcher: CoroutineDispatcher,
     private val awsProperties: AwsProperties,
     private val s3AsyncClient: S3AsyncClient,
-    private val fileInfoRepository: CmsFileInfoRepository
+    private val fileInfoRepository: CmsFileInfoRepository,
 ) {
 
     private val logger by Logger()
 
-    suspend fun upload(file: FilePart) = executeIn(
-        dispatcher = ioDispatcher,
-        action = { file.upload(s3AsyncClient, awsProperties.bucket) }
-    )
+    suspend fun upload(file: FilePart) = executeIn(dispatcher = ioDispatcher, action = { file.upload(s3AsyncClient, awsProperties.bucket) })
 
-    suspend fun upload(fileKey: String, file: FilePart) = executeIn(
-        dispatcher = ioDispatcher,
-        action = { file.upload(fileKey, s3AsyncClient, awsProperties.bucket) }
-    )
+    suspend fun upload(fileKey: String, file: FilePart) =
+        executeIn(dispatcher = ioDispatcher, action = { file.upload(fileKey, s3AsyncClient, awsProperties.bucket) })
 
-    suspend fun addFileInfo(file: FilePart, account: Account, fileSize: Long?): Result<FileInfoResponse?, ErrorData> = executeIn(
-        dispatcher = ioDispatcher,
-        action = {
+    suspend fun addFileInfo(file: FilePart, account: Account, fileSize: Long?): Result<FileInfoResponse?, ErrorData> =
+        executeIn(dispatcher = ioDispatcher, action = {
             upload(file).component1()?.let {
-                val fileInfoRequest = FileInfoRequest(
-                    id = it,
-                    name = file.filename().getFileName(),
-                    size = fileSize ?: file.content().count().awaitSingle(),
-                    extension = file.filename().getFileExtensionType()
-                )
-                fileInfoRequest.setCreateInfo(account)
-                fileInfoRepository.save(fileInfoRequest.toEntity()).toResponse()
+                fileInfoRepository.save(fileInfoRequest(it, file, fileSize, account).toEntity()).toResponse()
             }
-        }
-    )
+        })
 
-    suspend fun addFileInfo(fileKey: String, file: FilePart, account: Account, fileSize: Long?): Result<FileInfoResponse?, ErrorData> = executeIn(
-        dispatcher = ioDispatcher,
-        action = {
+    private suspend fun fileInfoRequest(
+        it: String,
+        file: FilePart,
+        fileSize: Long?,
+        account: Account
+    ): FileInfoRequest {
+        val fileInfoRequest = FileInfoRequest(
+            id = it,
+            name = file.filename().getFileName(),
+            size = fileSize ?: file.content().count().awaitSingle(),
+            extension = file.filename().getFileExtensionType()
+        )
+        fileInfoRequest.setCreateInfo(account)
+        return fileInfoRequest
+    }
+
+    suspend fun addImageFileInfo(file: FilePart, account: Account, fileSize: Long?): ImageFileInfoResponse? = coroutineScope {
+        upload(file).component1()?.let {
+            fileInfoRepository.save(fileInfoRequest(it, file, fileSize, account).toEntity()).toImageResponse()
+        }
+    }
+
+    suspend fun addFileInfo(fileKey: String, file: FilePart, account: Account, fileSize: Long?): Result<FileInfoResponse?, ErrorData> =
+        executeIn(dispatcher = ioDispatcher, action = {
             coroutineScope {
                 launch {
                     upload(fileKey, file)
@@ -78,44 +83,40 @@ class FileService(
                     fileInfoRepository.save(this.toEntity()).toResponse()
                 }
             }
-        }
-    )
+        })
 
     suspend fun addFileInfo(
         fileRequest: FileRequest?,
         account: Account
-    ) = executeIn(
-        dispatcher = ioDispatcher,
-        action = {
-            coroutineScope {
-                fileRequest?.let {
-                    launch {
-                        it.file?.let { file ->
-                            it.fileKey?.let { fileKey ->
-                                addFileInfo(fileKey = fileKey, file = file, account = account, fileSize = null)
-                            }
+    ) = executeIn(dispatcher = ioDispatcher, action = {
+        coroutineScope {
+            fileRequest?.let {
+                launch {
+                    it.file?.let { file ->
+                        it.fileKey?.let { fileKey ->
+                            addFileInfo(fileKey = fileKey, file = file, account = account, fileSize = null)
                         }
                     }
+                }
 
-                    launch {
-                        it.shareFile?.let { shareFile ->
-                            it.shareFileKey?.let { shareFileKey ->
-                                addFileInfo(fileKey = shareFileKey, file = shareFile, account = account, fileSize = null)
-                            }
+                launch {
+                    it.shareFile?.let { shareFile ->
+                        it.shareFileKey?.let { shareFileKey ->
+                            addFileInfo(fileKey = shareFileKey, file = shareFile, account = account, fileSize = null)
                         }
                     }
+                }
 
-                    launch {
-                        it.thumbnailFile?.let { thumbnailFile ->
-                            it.thumbnailFileKey?.let { thumbnailFileKey ->
-                                addFileInfo(fileKey = thumbnailFileKey, file = thumbnailFile, account = account, fileSize = null)
-                            }
+                launch {
+                    it.thumbnailFile?.let { thumbnailFile ->
+                        it.thumbnailFileKey?.let { thumbnailFileKey ->
+                            addFileInfo(fileKey = thumbnailFileKey, file = thumbnailFile, account = account, fileSize = null)
                         }
                     }
                 }
             }
         }
-    )
+    })
 
     suspend fun getFileInfo(id: String): Result<FileInfoResponse?, ErrorData> = executeIn {
         fileInfoRepository.findById(id)?.toResponse()
