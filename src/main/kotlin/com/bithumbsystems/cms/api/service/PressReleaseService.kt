@@ -24,6 +24,7 @@ import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.query.Criteria
@@ -66,7 +67,7 @@ class PressReleaseService(
                     if (it.isFixTop) {
                         applyToRedis()
                     }
-                    applyTop5ToRedis()
+                    applyTopToRedis(5)
                 }
             }
         }
@@ -82,8 +83,8 @@ class PressReleaseService(
         }
     }
 
-    private suspend fun applyTop5ToRedis() {
-        pressReleaseRepository.findTop5ByIsShowIsTrueAndIsDeleteIsFalseAndIsDraftIsFalseOrderByScreenDateDescCreateDateDesc()
+    private suspend fun applyTopToRedis(limit: Int) {
+        pressReleaseRepository.findByIsShowIsTrueAndIsDeleteIsFalseAndIsDraftIsFalseOrderByScreenDateDesc(PageRequest.of(0, limit))
             .map { it.toRedisEntity() }.toList().also { topList ->
                 redisRepository.addOrUpdateRBucket(
                     bucketKey = CMS_PRESS_RELEASE_RECENT,
@@ -99,7 +100,7 @@ class PressReleaseService(
             val defaultSort: Sort = buildSort()
 
             val drafts: Deferred<List<PressReleaseResponse>> = async {
-                pressReleaseRepository.findAllByCriteria(
+                pressReleaseRepository.findByCriteria(
                     criteria = buildCriteriaForDraft(account.accountId),
                     pageable = Pageable.unpaged(),
                     sort = buildSortForDraft()
@@ -107,7 +108,7 @@ class PressReleaseService(
             }
 
             val pressReleases: Deferred<List<PressReleaseResponse>> = async {
-                pressReleaseRepository.findAllByCriteria(
+                pressReleaseRepository.findByCriteria(
                     criteria = criteria.withoutDraft(),
                     pageable = Pageable.unpaged(),
                     sort = defaultSort
@@ -118,7 +119,7 @@ class PressReleaseService(
 
             val top: Deferred<List<PressReleaseResponse>> = async {
                 criteria = searchParams.buildCriteria(isFixTop = true, isDelete = false)
-                pressReleaseRepository.findAllByCriteria(criteria = criteria.withoutDraft(), pageable = Pageable.unpaged(), sort = defaultSort)
+                pressReleaseRepository.findByCriteria(criteria = criteria.withoutDraft(), pageable = Pageable.unpaged(), sort = defaultSort)
                     .map { it.toMaskingResponse() }
                     .toList()
             }
@@ -161,7 +162,7 @@ class PressReleaseService(
                         if (isChange) {
                             applyToRedis()
                         }
-                        applyTop5ToRedis()
+                        applyTopToRedis(5)
                     }
                 }
             }
@@ -180,7 +181,7 @@ class PressReleaseService(
                         if (response.isFixTop) {
                             applyToRedis()
                         }
-                        applyTop5ToRedis()
+                        applyTopToRedis(5)
                     }
                 }
             }

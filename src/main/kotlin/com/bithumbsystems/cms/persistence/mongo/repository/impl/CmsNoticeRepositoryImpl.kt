@@ -24,10 +24,10 @@ import org.springframework.stereotype.Repository
 class CmsNoticeRepositoryImpl(
     protected val reactiveMongoTemplate: ReactiveMongoTemplate
 ) : CmsBaseRepository<CmsNotice>, CmsDraftRepository<CmsNotice> {
-    override suspend fun countAllByCriteria(criteria: Criteria): Long =
+    override suspend fun countByCriteria(criteria: Criteria): Long =
         reactiveMongoTemplate.count(Query.query(criteria), CmsNotice::class.java).awaitSingle()
 
-    override fun findAllByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<CmsNotice> {
+    override fun findByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<CmsNotice> {
         val lookUpOperation: LookupOperation =
             LookupOperation.newLookup()
                 .from("cms_notice_category")
@@ -63,7 +63,7 @@ class CmsNoticeRepositoryImpl(
         return reactiveMongoTemplate.aggregate(buildFixAggregation(lookUpOperation), "cms_notice", CmsNotice::class.java).asFlow()
     }
 
-    override fun findTop5ByIsDraftIsFalseOrderByScreenDateDescCreateDateDesc(): Flow<CmsNotice> {
+    override fun findByIsDraftIsFalseOrderByScreenDateDesc(pageable: Pageable): Flow<CmsNotice> {
         val lookUpOperation: LookupOperation =
             LookupOperation.newLookup()
                 .from("cms_notice_category")
@@ -76,7 +76,7 @@ class CmsNoticeRepositoryImpl(
                     lookUpOperation,
                     Aggregation.match(Criteria.where("is_draft").`is`(false)),
                     Aggregation.sort(buildSort()),
-                    Aggregation.limit(5)
+                    Aggregation.limit(pageable.pageSize.toLong()),
                 )
             ),
             "cms_notice",

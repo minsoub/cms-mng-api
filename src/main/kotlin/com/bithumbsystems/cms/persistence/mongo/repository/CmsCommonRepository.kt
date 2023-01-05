@@ -10,9 +10,9 @@ import org.springframework.data.repository.kotlin.CoroutineSortingRepository
 @NoRepositoryBean
 interface CmsCommonRepository<T> : CoroutineSortingRepository<T, String> {
 
-    suspend fun countAllByCriteria(criteria: Criteria): Long
+    suspend fun countByCriteria(criteria: Criteria): Long
 
-    fun findAllByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<T>
+    fun findByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<T>
 
     override suspend fun findById(id: String): T?
 

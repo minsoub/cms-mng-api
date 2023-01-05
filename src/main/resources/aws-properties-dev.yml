@@ -18,6 +18,6 @@ cloud:
         sqs:
             endpoint: https://sqs.ap-northeast-2.amazonaws.com
             program:
-                queue-name: program_queue_dev.fifo
+                queue-name: bs-program_queue_dev.fifo
             reason:
-                queue-name: privacy_reason_queue_dev.fifo
+                queue-name: bs-privacy_reason_queue_dev.fifo

@@ -2,11 +2,12 @@ package com.bithumbsystems.cms.persistence.mongo.repository
 
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsNotice
 import kotlinx.coroutines.flow.Flow
+import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Repository
 
 @Repository
 interface CmsNoticeRepository : CmsCommonRepository<CmsNotice> {
-    fun findTop5ByIsShowIsTrueAndIsDeleteIsFalseAndIsDraftIsFalseOrderByScreenDateDescCreateDateDesc(): Flow<CmsNotice>
+    fun findByIsShowIsTrueAndIsDeleteIsFalseAndIsDraftIsFalseOrderByScreenDateDesc(pageable: Pageable): Flow<CmsNotice>
 
-    fun findAllByIsBannerIsTrueAndIsDraftIsFalseAndIsScheduleIsFalse(): Flow<CmsNotice>
+    fun findByIsBannerIsTrueAndIsDraftIsFalseAndIsScheduleIsFalse(): Flow<CmsNotice>
 }

@@ -53,7 +53,7 @@ class NoticeCategoryService(
     }
 
     private suspend fun applyToRedis() {
-        noticeCategoryRepository.findAllByCriteria(
+        noticeCategoryRepository.findByCriteria(
             criteria = Criteria.where("is_delete").`is`(false),
             pageable = Pageable.unpaged(),
             sort = buildSort()
@@ -77,7 +77,7 @@ class NoticeCategoryService(
             val criteria: Criteria = searchParams.buildCriteria(isFixTop = null, isDelete = false)
 
             val categories: Deferred<List<NoticeCategoryResponse>> = async {
-                noticeCategoryRepository.findAllByCriteria(
+                noticeCategoryRepository.findByCriteria(
                     criteria = criteria,
                     pageable = Pageable.unpaged(),
                     sort = buildSort()
@@ -96,7 +96,7 @@ class NoticeCategoryService(
     suspend fun getCategories(): Result<ListResponse<CategoryResponse>?, ErrorData> = executeIn {
         coroutineScope {
             val categories: Deferred<List<CategoryResponse>> = async {
-                noticeCategoryRepository.findAllByCriteria(
+                noticeCategoryRepository.findByCriteria(
                     criteria = SearchParams(isUse = true).buildCriteria(isFixTop = null, isDelete = false),
                     pageable = Pageable.unpaged(),
                     sort = buildSort()

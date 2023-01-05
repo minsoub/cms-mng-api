@@ -42,7 +42,7 @@ fun CmsPressRelease.toMaskingResponse(): PressReleaseResponse = PressReleaseResp
     readCount = readCount,
     screenDate = screenDate,
     createAccountEmail = createAccountEmail.getEmailMask(),
-    createDate = if (isUseUpdateDate) screenDate ?: createDate else createDate,
+    createDate = createDate,
     updateDate = updateDate
 )
 

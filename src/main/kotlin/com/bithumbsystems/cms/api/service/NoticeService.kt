@@ -26,6 +26,7 @@ import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import kotlinx.coroutines.launch
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.query.Criteria
@@ -78,7 +79,7 @@ class NoticeService(
                     if (it.isFixTop) {
                         applyToRedis()
                     }
-                    applyTop5ToRedis()
+                    applyTopToRedis(5)
                 }
                 noticeRepository.findById(entity.id)?.toResponse()
             }
@@ -95,8 +96,9 @@ class NoticeService(
         }
     }
 
-    private suspend fun applyTop5ToRedis() {
-        noticeRepository.findTop5ByIsShowIsTrueAndIsDeleteIsFalseAndIsDraftIsFalseOrderByScreenDateDescCreateDateDesc().map { it.toRedisEntity() }
+    private suspend fun applyTopToRedis(limit: Int) {
+        noticeRepository.findByIsShowIsTrueAndIsDeleteIsFalseAndIsDraftIsFalseOrderByScreenDateDesc(PageRequest.of(0, limit))
+            .map { it.toRedisEntity() }
             .toList().also { topList ->
                 redisRepository.addOrUpdateRBucket(
                     bucketKey = CMS_NOTICE_RECENT,
@@ -122,7 +124,7 @@ class NoticeService(
     }
 
     private suspend fun findAndDeleteAllBanner(account: Account) {
-        noticeRepository.findAllByIsBannerIsTrueAndIsDraftIsFalseAndIsScheduleIsFalse().map { notice ->
+        noticeRepository.findByIsBannerIsTrueAndIsDraftIsFalseAndIsScheduleIsFalse().map { notice ->
             notice.isBanner = false
             notice.setUpdateInfo(account)
             return@map notice
@@ -137,7 +139,7 @@ class NoticeService(
             val defaultSort: Sort = buildSort()
 
             val drafts: Deferred<List<NoticeResponse>> = async {
-                noticeRepository.findAllByCriteria(
+                noticeRepository.findByCriteria(
                     criteria = buildCriteriaForDraft(account.accountId),
                     pageable = Pageable.unpaged(),
                     sort = buildSortForDraft()
@@ -147,7 +149,7 @@ class NoticeService(
             }
 
             val notices: Deferred<List<NoticeResponse>> = async {
-                noticeRepository.findAllByCriteria(
+                noticeRepository.findByCriteria(
                     criteria = criteria.withoutDraft(),
                     pageable = Pageable.unpaged(),
                     sort = defaultSort
@@ -158,7 +160,7 @@ class NoticeService(
 
             val top: Deferred<List<NoticeResponse>> = async {
                 criteria = searchParams.buildCriteria(isFixTop = true, isDelete = false)
-                noticeRepository.findAllByCriteria(criteria = criteria.withoutDraft(), pageable = Pageable.unpaged(), sort = defaultSort)
+                noticeRepository.findByCriteria(criteria = criteria.withoutDraft(), pageable = Pageable.unpaged(), sort = defaultSort)
                     .map { it.toMaskingResponse() }
                     .toList()
             }
@@ -215,7 +217,7 @@ class NoticeService(
                         if (isChange) {
                             applyToRedis()
                         }
-                        applyTop5ToRedis()
+                        applyTopToRedis(5)
                     }
                 }
             }
@@ -234,7 +236,7 @@ class NoticeService(
                         if (response.isFixTop) {
                             applyToRedis()
                         }
-                        applyTop5ToRedis()
+                        applyTopToRedis(5)
                     }
                 }
             }

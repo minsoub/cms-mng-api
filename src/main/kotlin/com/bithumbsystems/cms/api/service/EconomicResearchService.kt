@@ -88,7 +88,7 @@ class EconomicResearchService(
                 val defaultSort: Sort = buildSort()
 
                 val drafts: Deferred<List<EconomicResearchResponse>> = async {
-                    economicResearchRepository.findAllByCriteria(
+                    economicResearchRepository.findByCriteria(
                         criteria = buildCriteriaForDraft(account.accountId),
                         pageable = Pageable.unpaged(),
                         sort = buildSortForDraft()
@@ -98,7 +98,7 @@ class EconomicResearchService(
                 }
 
                 val economicResearches: Deferred<List<EconomicResearchResponse>> = async {
-                    economicResearchRepository.findAllByCriteria(
+                    economicResearchRepository.findByCriteria(
                         criteria = criteria.withoutDraft(),
                         pageable = Pageable.unpaged(),
                         sort = defaultSort
@@ -109,7 +109,7 @@ class EconomicResearchService(
 
                 val top: Deferred<List<EconomicResearchResponse>> = async {
                     criteria = searchParams.buildCriteria(isFixTop = true, isDelete = false)
-                    economicResearchRepository.findAllByCriteria(criteria = criteria, pageable = Pageable.unpaged(), sort = defaultSort)
+                    economicResearchRepository.findByCriteria(criteria = criteria, pageable = Pageable.unpaged(), sort = defaultSort)
                         .map { it.toMaskingResponse() }
                         .toList()
                 }

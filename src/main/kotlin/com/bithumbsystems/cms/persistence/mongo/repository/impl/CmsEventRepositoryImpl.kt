@@ -18,22 +18,12 @@ import org.springframework.stereotype.Repository
 class CmsEventRepositoryImpl(
     private val reactiveMongoTemplate: ReactiveMongoTemplate
 ) : CmsBaseRepository<CmsEvent> {
-    override suspend fun countAllByCriteria(criteria: Criteria): Long =
+    override suspend fun countByCriteria(criteria: Criteria): Long =
         reactiveMongoTemplate.count(Query.query(criteria), CmsEvent::class.java).awaitSingle()
 
-    override fun findAllByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<CmsEvent> =
+    override fun findByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<CmsEvent> =
         reactiveMongoTemplate.find(QueryUtil.buildQuery(criteria, pageable, sort), CmsEvent::class.java)
             .asFlow()
-
-    /*override suspend fun findById(id: String): CmsEvent? {
-        val matchOperation: MatchOperation = Aggregation.match(Criteria.where("_id").`is`(id))
-
-        return reactiveMongoTemplate.aggregate(
-            Aggregation.newAggregation(matchOperation),
-            "cms_event",
-            CmsEvent::class.java
-        ).awaitFirstOrNull()
-    }*/
 
     override fun getFixItems(): Flow<CmsEvent> {
         return reactiveMongoTemplate.aggregate(

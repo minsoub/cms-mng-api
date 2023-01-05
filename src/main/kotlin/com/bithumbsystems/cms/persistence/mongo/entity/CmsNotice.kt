@@ -21,7 +21,7 @@ class CmsNotice(
     var content: String,
     val createAccountId: String,
     val createAccountEmail: String,
-    val createDate: LocalDateTime = LocalDateTime.now()
+    var createDate: LocalDateTime = LocalDateTime.now()
 ) {
     var isFixTop: Boolean = false
     var isShow: Boolean = false
@@ -75,12 +75,13 @@ fun CmsNotice.setUpdateInfo(request: NoticeRequest, account: Account, fileReques
     updateDate = LocalDateTime.now()
     isUseUpdateDate = request.isUseUpdateDate
     isAlignTop = request.isAlignTop
-    screenDate = if (isUseUpdateDate) LocalDateTime.now() else null
+    screenDate = if (isAlignTop) LocalDateTime.now() else screenDate
+    createDate = if (isUseUpdateDate) LocalDateTime.now() else createDate
 }
 
 fun CmsNotice.toRedisEntity(): RedisNotice = RedisNotice(
     id = id,
     title = title,
     categoryNames = categoryNames.map { it.name }.toList(),
-    screenDate = screenDate ?: createDate
+    createDate = createDate
 )

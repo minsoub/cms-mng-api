@@ -72,7 +72,7 @@ class NoticeCategoryServiceTest {
         } returns entity
 
         coEvery {
-            noticeCategoryRepository.findAllByCriteria(any(), any(), any())
+            noticeCategoryRepository.findByCriteria(any(), any(), any())
         } returns flowOf(entity)
 
         coJustRun {
@@ -96,11 +96,11 @@ class NoticeCategoryServiceTest {
         val sort: Sort = searchParams.buildSort()
 
         coEvery {
-            noticeCategoryRepository.countAllByCriteria(criteria)
+            noticeCategoryRepository.countByCriteria(criteria)
         } returns 1
 
         coEvery {
-            searchParams.page?.let { PageRequest.of(it, 1) }?.let { noticeCategoryRepository.findAllByCriteria(criteria, it, sort) }
+            searchParams.page?.let { PageRequest.of(it, 1) }?.let { noticeCategoryRepository.findByCriteria(criteria, it, sort) }
         } returns flowOf(NoticeCategoryRequest(name = randomUUID, isUse = false).toEntity())
 
         val result: Result<ListResponse<NoticeCategoryResponse>?, ErrorData> = noticeCategoryService.getCategories(searchParams)
@@ -171,7 +171,7 @@ class NoticeCategoryServiceTest {
         } returns entity
 
         coEvery {
-            noticeCategoryRepository.findAllByCriteria(any(), any(), any())
+            noticeCategoryRepository.findByCriteria(any(), any(), any())
         } returns flowOf(entity)
 
         coJustRun {

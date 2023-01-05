@@ -18,10 +18,10 @@ import org.springframework.stereotype.Repository
 class CmsPressReleaseRepositoryImpl(
     private val reactiveMongoTemplate: ReactiveMongoTemplate
 ) : CmsBaseRepository<CmsPressRelease> {
-    override suspend fun countAllByCriteria(criteria: Criteria): Long =
+    override suspend fun countByCriteria(criteria: Criteria): Long =
         reactiveMongoTemplate.count(query(criteria), CmsPressRelease::class.java).awaitSingle()
 
-    override fun findAllByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<CmsPressRelease> =
+    override fun findByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<CmsPressRelease> =
         reactiveMongoTemplate.find(buildQuery(criteria, pageable, sort), CmsPressRelease::class.java)
             .asFlow()
 

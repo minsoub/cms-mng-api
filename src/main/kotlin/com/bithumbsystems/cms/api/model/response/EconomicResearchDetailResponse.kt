@@ -66,7 +66,7 @@ fun EconomicResearchDetailResponse.toRedisEntity(): RedisThumbnail = RedisThumbn
     id = id,
     title = title,
     thumbnailUrl = thumbnailUrl ?: thumbnailFileId?.getS3Url(),
-    screenDate = screenDate ?: createDate
+    createDate = createDate
 )
 
 /**
@@ -96,7 +96,7 @@ fun CmsEconomicResearch.toResponse(): EconomicResearchDetailResponse = EconomicR
     thumbnailUrl = thumbnailUrl,
     createAccountId = createAccountId,
     createAccountEmail = createAccountEmail,
-    createDate = if (isUseUpdateDate) screenDate ?: createDate else createDate,
+    createDate = createDate,
     updateAccountId = updateAccountId,
     updateAccountEmail = updateAccountEmail,
     updateDate = updateDate

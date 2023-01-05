@@ -6,5 +6,5 @@ data class RedisThumbnail(
     val id: String,
     val title: String,
     val thumbnailUrl: String?,
-    val screenDate: LocalDateTime
+    val createDate: LocalDateTime
 )

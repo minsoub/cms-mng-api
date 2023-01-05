@@ -121,11 +121,11 @@ object QueryUtil {
     }
 
     fun buildSort(): Sort {
-        return Sort.by(Direction.DESC, "screen_date", "create_date")
+        return Sort.by(Direction.DESC, "screen_date")
     }
 
     fun buildSortForDraft(): Sort {
-        return Sort.by(Direction.DESC, "is_draft", "screen_date", "create_date")
+        return Sort.by(Direction.DESC, "is_draft", "screen_date")
     }
 
     /**

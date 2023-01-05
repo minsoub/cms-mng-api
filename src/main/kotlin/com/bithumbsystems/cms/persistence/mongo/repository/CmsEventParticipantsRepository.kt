@@ -7,5 +7,5 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface CmsEventParticipantsRepository : CoroutineSortingRepository<CmsEventParticipants, String> {
-    fun findAllByEventId(eventId: String): Flow<CmsEventParticipants>
+    fun findByEventId(eventId: String): Flow<CmsEventParticipants>
 }

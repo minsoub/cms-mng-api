@@ -46,7 +46,7 @@ fun CmsEvent.toMaskingResponse(): EventResponse = EventResponse(
     type = type,
     screenDate = screenDate,
     createAccountEmail = createAccountEmail.getEmailMask(),
-    createDate = if (isUseUpdateDate) screenDate ?: createDate else createDate,
+    createDate = createDate,
     updateDate = updateDate
 )
 

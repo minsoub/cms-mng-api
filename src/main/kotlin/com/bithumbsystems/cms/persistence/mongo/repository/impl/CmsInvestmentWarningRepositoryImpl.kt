@@ -18,10 +18,10 @@ import org.springframework.stereotype.Repository
 class CmsInvestmentWarningRepositoryImpl(
     private val reactiveMongoTemplate: ReactiveMongoTemplate
 ) : CmsBaseRepository<CmsInvestmentWarning> {
-    override suspend fun countAllByCriteria(criteria: Criteria): Long =
+    override suspend fun countByCriteria(criteria: Criteria): Long =
         reactiveMongoTemplate.count(Query.query(criteria), CmsInvestmentWarning::class.java).awaitSingle()
 
-    override fun findAllByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<CmsInvestmentWarning> =
+    override fun findByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<CmsInvestmentWarning> =
         reactiveMongoTemplate.find(QueryUtil.buildQuery(criteria, pageable, sort), CmsInvestmentWarning::class.java)
             .asFlow()
 

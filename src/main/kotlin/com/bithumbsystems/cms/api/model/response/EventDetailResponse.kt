@@ -81,7 +81,7 @@ class EventDetailResponse(
 fun EventDetailResponse.toRedisEntity(): RedisBoard = RedisBoard(
     id = id,
     title = title,
-    screenDate = screenDate ?: createDate
+    createDate = createDate
 )
 
 /**
@@ -118,7 +118,7 @@ fun CmsEvent.toResponse(): EventDetailResponse = EventDetailResponse(
     screenDate = screenDate,
     createAccountId = createAccountId,
     createAccountEmail = createAccountEmail,
-    createDate = if (isUseUpdateDate) screenDate ?: createDate else createDate,
+    createDate = createDate,
     updateAccountId = updateAccountId,
     updateAccountEmail = updateAccountEmail,
     updateDate = updateDate
