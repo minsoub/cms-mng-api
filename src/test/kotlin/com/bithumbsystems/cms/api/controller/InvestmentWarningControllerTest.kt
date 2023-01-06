@@ -26,7 +26,7 @@ class InvestmentWarningControllerTest @Autowired constructor(
         }
 
         val responseBody: Response<*>? = client.post()
-            .uri("/api/v1/mng/cms/invest-warnings")
+            .uri("/api/v1/mng/cms/investment-warnings")
             .header("authorization", "Bearer $token")
             .contentType(MediaType.MULTIPART_FORM_DATA)
             .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
@@ -44,7 +44,7 @@ class InvestmentWarningControllerTest @Autowired constructor(
     @Order(2)
     fun `투자유의지정 안내 목록 조회 테스트`() {
         val responseBody: Response<*>? = client.get()
-            .uri("/api/v1/mng/cms/invest-warnings")
+            .uri("/api/v1/mng/cms/investment-warnings")
             .header("authorization", "Bearer $token")
             .exchange()
             .expectStatus().isOk
@@ -60,7 +60,7 @@ class InvestmentWarningControllerTest @Autowired constructor(
     @Order(3)
     fun `투자유의지정 안내 조회 테스트`() {
         val responseBody: Response<*>? = client.get()
-            .uri("/api/v1/mng/cms/invest-warnings/$id}")
+            .uri("/api/v1/mng/cms/investment-warnings/$id}")
             .exchange()
             .expectStatus().isOk
             .expectBody(Response::class.java)
@@ -79,7 +79,7 @@ class InvestmentWarningControllerTest @Autowired constructor(
         }
 
         val responseBody: Response<*>? = client.put()
-            .uri("/api/v1/mng/cms/invest-warnings/$id}")
+            .uri("/api/v1/mng/cms/investment-warnings/$id}")
             .header("authorization", "Bearer $token")
             .contentType(MediaType.MULTIPART_FORM_DATA)
             .body(BodyInserters.fromMultipartData(bodyBuilder.build()))
@@ -96,7 +96,7 @@ class InvestmentWarningControllerTest @Autowired constructor(
     @Order(5)
     fun `투자유의지정 안내 삭제 테스트`() {
         val responseBody: Response<*>? = client.delete()
-            .uri("/api/v1/mng/cms/invest-warnings/$id}")
+            .uri("/api/v1/mng/cms/investment-warnings/$id}")
             .header("authorization", "Bearer $token")
             .exchange()
             .expectStatus().isOk
