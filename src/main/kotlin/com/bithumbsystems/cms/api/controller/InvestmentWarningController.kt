@@ -23,7 +23,7 @@ import org.springframework.web.bind.annotation.*
 import java.time.LocalDate
 
 @RestController
-@RequestMapping("/invest-warnings")
+@RequestMapping("/investment-warnings")
 class InvestmentWarningController(
     private val investmentWarningService: InvestmentWarningService
 ) {
