@@ -86,7 +86,7 @@ class InvestmentWarningService(
                 val defaultSort: Sort = buildSort()
 
                 val drafts: Deferred<List<InvestmentWarningResponse>> = async {
-                    investmentWarningRepository.findAllByCriteria(
+                    investmentWarningRepository.findByCriteria(
                         criteria = QueryUtil.buildCriteriaForDraft(account.accountId),
                         pageable = Pageable.unpaged(),
                         sort = QueryUtil.buildSortForDraft()
@@ -96,7 +96,7 @@ class InvestmentWarningService(
                 }
 
                 val investmentWarnings: Deferred<List<InvestmentWarningResponse>> = async {
-                    investmentWarningRepository.findAllByCriteria(
+                    investmentWarningRepository.findByCriteria(
                         criteria = criteria.withoutDraft(),
                         pageable = Pageable.unpaged(),
                         sort = defaultSort
@@ -107,7 +107,7 @@ class InvestmentWarningService(
 
                 val top: Deferred<List<InvestmentWarningResponse>> = async {
                     criteria = searchParams.buildCriteria(isFixTop = true, isDelete = false)
-                    investmentWarningRepository.findAllByCriteria(criteria = criteria, pageable = Pageable.unpaged(), sort = defaultSort)
+                    investmentWarningRepository.findByCriteria(criteria = criteria, pageable = Pageable.unpaged(), sort = defaultSort)
                         .map { it.toMaskingResponse() }
                         .toList()
                 }

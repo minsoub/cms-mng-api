@@ -66,7 +66,7 @@ fun NoticeDetailResponse.toRedisEntity(): RedisNotice = RedisNotice(
     id = id,
     title = title,
     categoryNames = categoryNames.map { it.name }.toList(),
-    screenDate = screenDate ?: createDate
+    createDate = createDate
 )
 
 /**
@@ -96,7 +96,7 @@ fun CmsNotice.toResponse(): NoticeDetailResponse = NoticeDetailResponse(
     screenDate = screenDate,
     createAccountId = createAccountId,
     createAccountEmail = createAccountEmail,
-    createDate = if (isUseUpdateDate) screenDate ?: createDate else createDate,
+    createDate = createDate,
     updateAccountId = updateAccountId,
     updateAccountEmail = updateAccountEmail,
     updateDate = updateDate

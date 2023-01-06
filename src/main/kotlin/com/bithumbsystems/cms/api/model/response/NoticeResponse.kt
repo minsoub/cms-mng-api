@@ -2,7 +2,6 @@ package com.bithumbsystems.cms.api.model.response
 
 import com.bithumbsystems.cms.api.model.aggregate.Category
 import com.bithumbsystems.cms.api.util.MaskingUtil.getEmailMask
-import com.bithumbsystems.cms.api.util.ResponseUtil.checkIsUseUpdateDate
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsNotice
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
@@ -50,7 +49,7 @@ fun CmsNotice.toMaskingResponse() = NoticeResponse(
     readCount = readCount,
     screenDate = screenDate,
     createAccountEmail = createAccountEmail.getEmailMask(),
-    createDate = checkIsUseUpdateDate(isUseUpdateDate = isUseUpdateDate, screenDate = screenDate, createDate = createDate),
+    createDate = createDate,
     updateDate = updateDate
 )
 

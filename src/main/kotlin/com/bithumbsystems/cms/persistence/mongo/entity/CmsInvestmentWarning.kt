@@ -18,7 +18,7 @@ class CmsInvestmentWarning(
     var content: String,
     val createAccountId: String,
     val createAccountEmail: String,
-    val createDate: LocalDateTime = LocalDateTime.now()
+    var createDate: LocalDateTime = LocalDateTime.now()
 ) {
     var isFixTop: Boolean = false
     var isShow: Boolean = false
@@ -66,11 +66,12 @@ fun CmsInvestmentWarning.setUpdateInfo(request: InvestmentWarningRequest, accoun
     updateDate = LocalDateTime.now()
     isUseUpdateDate = request.isUseUpdateDate
     isAlignTop = request.isAlignTop
-    screenDate = if (isUseUpdateDate) LocalDateTime.now() else null
+    screenDate = if (isAlignTop) LocalDateTime.now() else screenDate
+    createDate = if (isUseUpdateDate) LocalDateTime.now() else createDate
 }
 
 fun CmsInvestmentWarning.toRedisEntity(): RedisBoard = RedisBoard(
     id = id,
     title = title,
-    screenDate = screenDate ?: createDate
+    createDate = createDate
 )

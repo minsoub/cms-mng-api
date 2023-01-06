@@ -111,7 +111,7 @@ class EventService(
             val defaultSort: Sort = buildSort()
 
             val drafts: Deferred<List<EventResponse>> = async {
-                eventRepository.findAllByCriteria(
+                eventRepository.findByCriteria(
                     criteria = buildCriteriaForDraft(account.accountId),
                     pageable = Pageable.unpaged(),
                     sort = buildSortForDraft()
@@ -121,7 +121,7 @@ class EventService(
             }
 
             val events: Deferred<List<EventResponse>> = async {
-                eventRepository.findAllByCriteria(
+                eventRepository.findByCriteria(
                     criteria = criteria.withoutDraft(),
                     pageable = Pageable.unpaged(),
                     sort = defaultSort
@@ -132,7 +132,7 @@ class EventService(
 
             val top: Deferred<List<EventResponse>> = async {
                 criteria = searchParams.buildCriteria(isFixTop = true, isDelete = false)
-                eventRepository.findAllByCriteria(criteria = criteria, pageable = Pageable.unpaged(), sort = defaultSort)
+                eventRepository.findByCriteria(criteria = criteria, pageable = Pageable.unpaged(), sort = defaultSort)
                     .map { it.toMaskingResponse() }
                     .toList()
             }
@@ -211,9 +211,9 @@ class EventService(
     fun downloadEventExcel(eventId: String, reason: String, account: Account): Mono<ByteArrayInputStream> =
         mono {
             val eventParticipants: List<EventParticipantsResponse> =
-                eventParticipantsRepository.findAllByEventId(eventId).map { it.toResponse() }.toList()
+                eventParticipantsRepository.findByEventId(eventId).map { it.toResponse() }.toList()
 
-            eventParticipantsRepository.findAllByEventId(eventId).map {
+            eventParticipantsRepository.findByEventId(eventId).map {
                 it.uid = decryptUid(it.uid) // todo 복호화 처리
                 it.toResponse()
             }.toList()

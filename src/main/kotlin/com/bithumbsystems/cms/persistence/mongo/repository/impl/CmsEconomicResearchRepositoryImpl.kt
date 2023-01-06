@@ -18,22 +18,12 @@ import org.springframework.stereotype.Repository
 class CmsEconomicResearchRepositoryImpl(
     private val reactiveMongoTemplate: ReactiveMongoTemplate
 ) : CmsBaseRepository<CmsEconomicResearch> {
-    override suspend fun countAllByCriteria(criteria: Criteria): Long =
+    override suspend fun countByCriteria(criteria: Criteria): Long =
         reactiveMongoTemplate.count(Query.query(criteria), CmsEconomicResearch::class.java).awaitSingle()
 
-    override fun findAllByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<CmsEconomicResearch> =
+    override fun findByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<CmsEconomicResearch> =
         reactiveMongoTemplate.find(QueryUtil.buildQuery(criteria, pageable, sort), CmsEconomicResearch::class.java)
             .asFlow()
-
-    /*override suspend fun findById(id: String): CmsEconomicResearch? {
-        val matchOperation: MatchOperation = Aggregation.match(Criteria.where("_id").`is`(id))
-
-        return reactiveMongoTemplate.aggregate(
-            Aggregation.newAggregation(matchOperation),
-            "cms_economic_research",
-            CmsEconomicResearch::class.java
-        ).awaitFirstOrNull()
-    }*/
 
     override fun getFixItems(): Flow<CmsEconomicResearch> {
         return reactiveMongoTemplate.aggregate(

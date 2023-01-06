@@ -18,10 +18,10 @@ import org.springframework.stereotype.Repository
 class CmsNoticeCategoryRepositoryImpl(
     private val reactiveMongoTemplate: ReactiveMongoTemplate
 ) : CmsBaseRepository<CmsNoticeCategory> {
-    override suspend fun countAllByCriteria(criteria: Criteria): Long =
+    override suspend fun countByCriteria(criteria: Criteria): Long =
         reactiveMongoTemplate.count(Query.query(criteria), CmsNoticeCategory::class.java).awaitSingle()
 
-    override fun findAllByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<CmsNoticeCategory> =
+    override fun findByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<CmsNoticeCategory> =
         reactiveMongoTemplate.find(buildQuery(criteria, pageable, sort), CmsNoticeCategory::class.java)
             .asFlow()
 

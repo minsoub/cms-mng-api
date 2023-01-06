@@ -66,7 +66,7 @@ fun ReviewReportDetailResponse.toRedisEntity(): RedisThumbnail = RedisThumbnail(
     id = id,
     title = title,
     thumbnailUrl = thumbnailUrl ?: thumbnailFileId?.getS3Url(),
-    screenDate = screenDate ?: createDate
+    createDate = createDate
 )
 
 /**
@@ -96,7 +96,7 @@ fun CmsReviewReport.toResponse(): ReviewReportDetailResponse = ReviewReportDetai
     thumbnailUrl = thumbnailUrl ?: thumbnailFileId?.getS3Url(),
     createAccountId = createAccountId,
     createAccountEmail = createAccountEmail,
-    createDate = if (isUseUpdateDate) screenDate ?: createDate else createDate,
+    createDate = createDate,
     updateAccountId = updateAccountId,
     updateAccountEmail = updateAccountEmail,
     updateDate = updateDate

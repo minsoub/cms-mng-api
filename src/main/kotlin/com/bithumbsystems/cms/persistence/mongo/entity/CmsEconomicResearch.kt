@@ -18,7 +18,7 @@ class CmsEconomicResearch(
     var content: String,
     val createAccountId: String,
     val createAccountEmail: String,
-    val createDate: LocalDateTime = LocalDateTime.now()
+    var createDate: LocalDateTime = LocalDateTime.now()
 ) {
     var isFixTop: Boolean = false
     var isShow: Boolean = false
@@ -68,7 +68,8 @@ fun CmsEconomicResearch.setUpdateInfo(request: EconomicResearchRequest, account:
     updateDate = LocalDateTime.now()
     isUseUpdateDate = request.isUseUpdateDate
     isAlignTop = request.isAlignTop
-    screenDate = if (isUseUpdateDate) LocalDateTime.now() else null
+    screenDate = if (isAlignTop) LocalDateTime.now() else screenDate
+    createDate = if (isUseUpdateDate) LocalDateTime.now() else createDate
     thumbnailFileId = fileRequest?.thumbnailFileKey ?: request.thumbnailFileId
     thumbnailUrl = fileRequest?.thumbnailFileKey ?: request.thumbnailUrl
 }
@@ -77,5 +78,5 @@ fun CmsEconomicResearch.toRedisEntity(): RedisThumbnail = RedisThumbnail(
     id = id,
     title = title,
     thumbnailUrl = thumbnailFileId,
-    screenDate = screenDate ?: createDate
+    createDate = createDate
 )

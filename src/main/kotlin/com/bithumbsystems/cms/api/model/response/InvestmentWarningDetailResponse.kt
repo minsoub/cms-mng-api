@@ -60,7 +60,7 @@ class InvestmentWarningDetailResponse(
 fun InvestmentWarningDetailResponse.toRedisEntity(): RedisBoard = RedisBoard(
     id = id,
     title = title,
-    screenDate = screenDate ?: createDate
+    createDate = createDate
 )
 
 /**
@@ -88,7 +88,7 @@ fun CmsInvestmentWarning.toResponse(): InvestmentWarningDetailResponse = Investm
     screenDate = screenDate,
     createAccountId = createAccountId,
     createAccountEmail = createAccountEmail,
-    createDate = if (isUseUpdateDate) screenDate ?: createDate else createDate,
+    createDate = createDate,
     updateAccountId = updateAccountId,
     updateAccountEmail = updateAccountEmail,
     updateDate = updateDate

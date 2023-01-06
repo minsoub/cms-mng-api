@@ -87,7 +87,7 @@ class ReviewReportService(
             val defaultSort: Sort = buildSort()
 
             val drafts: Deferred<List<ReviewReportResponse>> = async {
-                reviewReportRepository.findAllByCriteria(
+                reviewReportRepository.findByCriteria(
                     criteria = buildCriteriaForDraft(account.accountId),
                     pageable = Pageable.unpaged(),
                     sort = buildSortForDraft()
@@ -97,7 +97,7 @@ class ReviewReportService(
             }
 
             val reviewReports: Deferred<List<ReviewReportResponse>> = async {
-                reviewReportRepository.findAllByCriteria(
+                reviewReportRepository.findByCriteria(
                     criteria = criteria.withoutDraft(),
                     pageable = Pageable.unpaged(),
                     sort = defaultSort
@@ -108,7 +108,7 @@ class ReviewReportService(
 
             val top: Deferred<List<ReviewReportResponse>> = async {
                 criteria = searchParams.buildCriteria(isFixTop = true, isDelete = false)
-                reviewReportRepository.findAllByCriteria(criteria = criteria, pageable = Pageable.unpaged(), sort = defaultSort)
+                reviewReportRepository.findByCriteria(criteria = criteria, pageable = Pageable.unpaged(), sort = defaultSort)
                     .map { it.toMaskingResponse() }
                     .toList()
             }

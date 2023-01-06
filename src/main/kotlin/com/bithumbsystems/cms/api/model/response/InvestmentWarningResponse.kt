@@ -42,7 +42,7 @@ fun CmsInvestmentWarning.toMaskingResponse(): InvestmentWarningResponse = Invest
     readCount = readCount,
     screenDate = screenDate,
     createAccountEmail = createAccountEmail.getEmailMask(),
-    createDate = if (isUseUpdateDate) screenDate ?: createDate else createDate,
+    createDate = createDate,
     updateDate = updateDate
 )
 
