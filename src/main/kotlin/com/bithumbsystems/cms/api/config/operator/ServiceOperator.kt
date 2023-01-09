@@ -4,6 +4,7 @@ import com.bithumbsystems.cms.api.model.enums.ErrorCode
 import com.bithumbsystems.cms.api.model.enums.ResponseCode
 import com.bithumbsystems.cms.api.model.response.ErrorData
 import com.bithumbsystems.cms.api.model.response.Response
+import com.bithumbsystems.cms.api.util.Logger
 import com.github.michaelbull.result.Result
 import com.github.michaelbull.result.coroutines.runSuspendCatching
 import com.github.michaelbull.result.fold
@@ -16,7 +17,7 @@ import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 
 object ServiceOperator {
-
+    private val logger by Logger()
     private val requestIdThreadLocal = ThreadLocal<String>()
     const val CONTEXT_NAME = "CMS_CONTEXT"
 
@@ -80,6 +81,7 @@ object ServiceOperator {
         require(validator())
         action()
     }.mapError {
+        logger.error(it.message, it)
         errorHandler(it)
     }
 
@@ -88,6 +90,7 @@ object ServiceOperator {
     ): Result<T?, ErrorData> = runSuspendCatching {
         action()
     }.mapError {
+        logger.error(it.message, it)
         errorHandler(it)
     }
 
@@ -99,6 +102,7 @@ object ServiceOperator {
             action()
         }
     }.mapError {
+        logger.error(it.message, it)
         errorHandler(it)
     }
 
