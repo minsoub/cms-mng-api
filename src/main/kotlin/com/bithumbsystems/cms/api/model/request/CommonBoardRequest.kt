@@ -16,10 +16,10 @@ open class CommonBoardRequest(
     @field:NotBlank
     open val content: String
 ) {
-    @Schema(description = "첨부파일 아이디", example = "59f07bfd7490409b99c00b13bb50372e", hidden = true)
+    @Schema(description = "첨부파일 아이디", example = "59f07bfd7490409b99c00b13bb50372e")
     var fileId: String? = null
 
-    @Schema(description = "공유 태그 이미지 파일 아이디", hidden = true)
+    @Schema(description = "공유 태그 이미지 파일 아이디", example = "59f07bfd7490409b99c00b13bb50372e")
     var shareFileId: String? = null
 
     @Schema(description = "상단 고정 여부", allowableValues = ["true", "false"], defaultValue = "false")
@@ -46,7 +46,7 @@ open class CommonBoardRequest(
     @Schema(description = "게시 예약 여부", allowableValues = ["true", "false"], defaultValue = "false")
     var isSchedule: Boolean = false
 
-    @Schema(description = "게시 예약 일시", example = "2023-01-13 17:09:11")
+    @Schema(description = "게시 예약 일시(현재 날짜 이후로 입력 필요)", example = "2023-01-13 17:09:11")
     @field:Future
     var scheduleDate: LocalDateTime? = null
 
