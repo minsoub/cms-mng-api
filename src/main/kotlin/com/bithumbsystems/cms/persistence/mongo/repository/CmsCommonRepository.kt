@@ -18,5 +18,5 @@ interface CmsCommonRepository<T> : CoroutineSortingRepository<T, String> {
 
     fun getFixItems(): Flow<T>
 
-    fun findByScheduleDateIsBetween(dateTimeRange: Range<LocalDateTime>): Flow<T>
+    fun findByIsDeleteIsFalseAndScheduleDateIsBetween(dateTimeRange: Range<LocalDateTime>): Flow<T>
 }
