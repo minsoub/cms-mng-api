@@ -4,6 +4,7 @@ import io.swagger.v3.oas.models.Components
 import io.swagger.v3.oas.models.OpenAPI
 import io.swagger.v3.oas.models.Operation
 import io.swagger.v3.oas.models.PathItem
+import io.swagger.v3.oas.models.info.Info
 import io.swagger.v3.oas.models.media.StringSchema
 import io.swagger.v3.oas.models.parameters.HeaderParameter
 import io.swagger.v3.oas.models.security.SecurityRequirement
@@ -43,7 +44,7 @@ class OpenApiConfig {
                     "my_site_id",
                     HeaderParameter().required(false).name("my_site_id").description("my_site_id").schema(StringSchema())
                 )
-        ).security(listOf(schemaRequirement))
+        ).security(listOf(schemaRequirement)).info(Info().title("콘텐츠통합관리 API").version("1.0"))
     }
 
     @Bean

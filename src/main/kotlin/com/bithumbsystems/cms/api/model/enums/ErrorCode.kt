@@ -1,5 +1,8 @@
 package com.bithumbsystems.cms.api.model.enums
 
+import io.swagger.v3.oas.annotations.media.Schema
+
+@Schema(description = "에러 코드")
 enum class ErrorCode(val message: String) {
     UNKNOWN("Unknown Error"),
     ILLEGAL_ARGUMENT("ILLEGAL ARGUMENT"),
