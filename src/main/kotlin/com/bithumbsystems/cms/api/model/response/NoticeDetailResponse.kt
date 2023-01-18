@@ -1,7 +1,9 @@
 package com.bithumbsystems.cms.api.model.response
 
 import com.bithumbsystems.cms.api.model.aggregate.Category
+import com.bithumbsystems.cms.api.util.EncryptionUtil.decryptAES
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsNotice
+import com.bithumbsystems.cms.persistence.redis.entity.RedisBanner
 import com.bithumbsystems.cms.persistence.redis.entity.RedisNotice
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
@@ -69,11 +71,19 @@ fun NoticeDetailResponse.toRedisEntity(): RedisNotice = RedisNotice(
     createDate = createDate
 )
 
+fun NoticeDetailResponse.toRedisBannerEntity(): RedisBanner = RedisBanner(
+    id = id,
+    title = when (categoryNames.isNotEmpty()) {
+        true -> "${categoryNames.joinToString("/", "[", "]") { it.name }} $title"
+        false -> title
+    }
+)
+
 /**
  * CmsNotice Entity를 NoticeCategoryDetailResponse 변환한다.
  * @return 마스킹 처리되지 않은 응답
  */
-fun CmsNotice.toResponse(): NoticeDetailResponse = NoticeDetailResponse(
+fun CmsNotice.toResponse(password: String): NoticeDetailResponse = NoticeDetailResponse(
     id = id,
     categoryNames = categoryNames,
     title = title,
@@ -95,9 +105,9 @@ fun CmsNotice.toResponse(): NoticeDetailResponse = NoticeDetailResponse(
     isAlignTop = isAlignTop,
     screenDate = screenDate,
     createAccountId = createAccountId,
-    createAccountEmail = createAccountEmail,
+    createAccountEmail = createAccountEmail.decryptAES(password = password),
     createDate = createDate,
     updateAccountId = updateAccountId,
-    updateAccountEmail = updateAccountEmail,
+    updateAccountEmail = updateAccountEmail?.decryptAES(password = password),
     updateDate = updateDate
 )

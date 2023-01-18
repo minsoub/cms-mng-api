@@ -1,11 +1,11 @@
 package com.bithumbsystems.cms.api.service
 
+import com.bithumbsystems.cms.api.config.aws.AwsProperties
 import com.bithumbsystems.cms.api.config.operator.ServiceOperator.executeIn
 import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.model.enums.RedisKeys.*
 import com.bithumbsystems.cms.api.model.request.*
 import com.bithumbsystems.cms.api.model.response.*
-import com.bithumbsystems.cms.api.util.Logger
 import com.bithumbsystems.cms.api.util.QueryUtil.buildCriteria
 import com.bithumbsystems.cms.api.util.QueryUtil.buildCriteriaForDraft
 import com.bithumbsystems.cms.api.util.QueryUtil.buildSort
@@ -15,7 +15,7 @@ import com.bithumbsystems.cms.persistence.mongo.entity.CmsNotice
 import com.bithumbsystems.cms.persistence.mongo.entity.setUpdateInfo
 import com.bithumbsystems.cms.persistence.mongo.entity.toRedisEntity
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsNoticeRepository
-import com.bithumbsystems.cms.persistence.redis.entity.RedisNotice
+import com.bithumbsystems.cms.persistence.redis.entity.RedisBanner
 import com.bithumbsystems.cms.persistence.redis.repository.RedisRepository
 import com.fasterxml.jackson.core.type.TypeReference
 import com.github.michaelbull.result.Result
@@ -37,9 +37,9 @@ import org.springframework.transaction.annotation.Transactional
 class NoticeService(
     private val noticeRepository: CmsNoticeRepository,
     private val fileService: FileService,
-    private val redisRepository: RedisRepository
-) {
-    val logger by Logger()
+    private val redisRepository: RedisRepository,
+    private val awsProperties: AwsProperties
+) : CmsBaseService() {
 
     /**
      * 공지사항 생성
@@ -54,7 +54,10 @@ class NoticeService(
         account: Account
     ): Result<NoticeDetailResponse?, ErrorData> = executeIn(
         validator = {
-            request.validate() && request.validateNotice() && fileRequest?.validate() == true
+            request.validate() && request.validateNotice() && fileRequest?.validate() ?: true && validateScheduleDate(
+                request = request,
+                repository = noticeRepository
+            )
         },
         action = {
             coroutineScope {
@@ -63,75 +66,38 @@ class NoticeService(
                         launch {
                             fileService.addFileInfo(fileRequest = fileRequest, account = account)
                         }
-                        request.setCreateInfo(fileRequest = fileRequest, account = account)
+                        request.setCreateInfo(
+                            password = awsProperties.kmsKey,
+                            saltKey = awsProperties.saltKey,
+                            ivKey = awsProperties.ivKey,
+                            fileRequest = fileRequest,
+                            account = account
+                        )
                     }
-                } ?: request.setCreateInfo(account)
+                } ?: request.setCreateInfo(
+                    password = awsProperties.kmsKey,
+                    saltKey = awsProperties.saltKey,
+                    ivKey = awsProperties.ivKey,
+                    account = account
+                )
 
                 val entity: CmsNotice = request.toEntity()
 
-                if (request.isBanner) {
-                    // 이전 게시글 있는지 여부 확인
+                if (checkRequestCondition(request)) {
                     findAndDeleteAllBanner(account)
                     addBannerToRedis(entity.toRedisEntity())
                 }
 
-                noticeRepository.save(entity).toResponse().also {
+                noticeRepository.save(entity).toResponse(awsProperties.kmsKey).also {
                     if (it.isFixTop) {
                         applyToRedis()
                     }
                     applyTopToRedis(5)
                 }
-                noticeRepository.findById(entity.id)?.toResponse()
+                noticeRepository.findById(entity.id)?.toResponse(awsProperties.kmsKey)
             }
         }
     )
-
-    private suspend fun applyToRedis() {
-        noticeRepository.getFixItems().map { item -> item.toRedisEntity() }.toList().also { totalList ->
-            redisRepository.addOrUpdateRBucket(
-                bucketKey = CMS_NOTICE_FIX,
-                value = totalList,
-                typeReference = object : TypeReference<List<RedisNotice>>() {}
-            )
-        }
-    }
-
-    private suspend fun applyTopToRedis(limit: Int) {
-        noticeRepository.findByIsShowIsTrueAndIsDeleteIsFalseAndIsDraftIsFalseOrderByScreenDateDesc(PageRequest.of(0, limit))
-            .map { it.toRedisEntity() }
-            .toList().also { topList ->
-                redisRepository.addOrUpdateRBucket(
-                    bucketKey = CMS_NOTICE_RECENT,
-                    value = topList,
-                    typeReference = object : TypeReference<List<RedisNotice>>() {}
-                )
-            }
-    }
-
-    private suspend fun addBannerToRedis(redisEntity: RedisNotice) {
-        redisRepository.addOrUpdateRBucket(
-            bucketKey = CMS_NOTICE_BANNER,
-            value = redisEntity,
-            typeReference = object : TypeReference<RedisNotice>() {}
-        )
-    }
-
-    private suspend fun deleteBannerFromRedis() {
-        redisRepository.deleteRBucket(
-            bucketKey = CMS_NOTICE_BANNER,
-            typeReference = object : TypeReference<RedisNotice>() {}
-        )
-    }
-
-    private suspend fun findAndDeleteAllBanner(account: Account) {
-        noticeRepository.findByIsBannerIsTrueAndIsDraftIsFalseAndIsScheduleIsFalse().map { notice ->
-            notice.isBanner = false
-            notice.setUpdateInfo(account)
-            return@map notice
-        }.toList().also { noticeList ->
-            noticeRepository.saveAll(noticeList).collect()
-        }
-    }
 
     suspend fun getNotices(searchParams: SearchParams, account: Account): Result<ListResponse<NoticeResponse>?, ErrorData> = executeIn {
         coroutineScope {
@@ -154,14 +120,14 @@ class NoticeService(
                     pageable = Pageable.unpaged(),
                     sort = defaultSort
                 )
-                    .map { it.toMaskingResponse() }
+                    .map { it.toMaskingResponse(awsProperties.kmsKey) }
                     .toList()
             }
 
             val top: Deferred<List<NoticeResponse>> = async {
                 criteria = searchParams.buildCriteria(isFixTop = true, isDelete = false)
                 noticeRepository.findByCriteria(criteria = criteria.withoutDraft(), pageable = Pageable.unpaged(), sort = defaultSort)
-                    .map { it.toMaskingResponse() }
+                    .map { it.toMaskingResponse(awsProperties.kmsKey) }
                     .toList()
             }
 
@@ -173,7 +139,7 @@ class NoticeService(
     }
 
     suspend fun getNotice(id: String): Result<NoticeDetailResponse?, ErrorData> = executeIn {
-        noticeRepository.findById(id)?.toResponse()
+        noticeRepository.findById(id)?.toResponse(awsProperties.kmsKey)
     }
 
     @Transactional
@@ -184,7 +150,10 @@ class NoticeService(
         account: Account
     ): Result<NoticeDetailResponse?, ErrorData> = executeIn(
         validator = {
-            request.validate() && request.validateNotice() && fileRequest?.validate() == true
+            request.validate() && request.validateNotice() && fileRequest?.validate() ?: true && validateScheduleDate(
+                request = request,
+                repository = noticeRepository
+            )
         },
         action = {
             coroutineScope {
@@ -196,15 +165,12 @@ class NoticeService(
                     }
                 }
 
-                noticeRepository.findById(id)?.let {
-                    val isBannerChange: Boolean = it.isBanner != request.isBanner
-                    val isChange: Boolean = it.isFixTop != request.isFixTop
-
-                    if (isBannerChange) {
+                noticeRepository.findById(id)?.let { notice ->
+                    if (notice.isBanner != request.isBanner) {
                         when (request.isBanner) {
                             true -> {
                                 findAndDeleteAllBanner(account)
-                                addBannerToRedis(it.toRedisEntity())
+                                addBannerToRedis(notice.toRedisEntity())
                             }
 
                             false -> {
@@ -212,9 +178,16 @@ class NoticeService(
                             }
                         }
                     }
-                    it.setUpdateInfo(request = request, account = account, fileRequest = fileRequest)
-                    noticeRepository.save(it).toResponse().also {
-                        if (isChange) {
+                    notice.setUpdateInfo(
+                        password = awsProperties.kmsKey,
+                        saltKey = awsProperties.saltKey,
+                        ivKey = awsProperties.ivKey,
+                        request = request,
+                        account = account,
+                        fileRequest = fileRequest
+                    )
+                    noticeRepository.save(notice).toResponse(awsProperties.kmsKey).also {
+                        if (needUpdate(notice, request)) {
                             applyToRedis()
                         }
                         applyTopToRedis(5)
@@ -224,15 +197,26 @@ class NoticeService(
         }
     )
 
+    private fun needUpdate(
+        it: CmsNotice,
+        request: NoticeRequest
+    ) = it.isFixTop != request.isFixTop || it.isDelete != request.isDelete || it.isShow != request.isShow ||
+        it.isSchedule != request.isSchedule || it.title != request.title
+
     @Transactional
     suspend fun deleteNotice(id: String, account: Account): Result<NoticeDetailResponse?, ErrorData> = executeIn {
         noticeRepository.findById(id)?.let {
             when (it.isDelete) {
-                true -> it.toResponse()
+                true -> it.toResponse(awsProperties.kmsKey)
                 false -> {
                     it.isDelete = true
-                    it.setUpdateInfo(account)
-                    noticeRepository.save(it).toResponse().also { response ->
+                    it.setUpdateInfo(
+                        password = awsProperties.kmsKey,
+                        saltKey = awsProperties.saltKey,
+                        ivKey = awsProperties.ivKey,
+                        account = account
+                    )
+                    noticeRepository.save(it).toResponse(awsProperties.kmsKey).also { response ->
                         if (response.isFixTop) {
                             applyToRedis()
                         }
@@ -247,10 +231,15 @@ class NoticeService(
     suspend fun createNoticeBanner(id: String, account: Account): Result<NoticeDetailResponse?, ErrorData> = executeIn {
         noticeRepository.findById(id)?.let {
             it.isBanner = true
-            it.setUpdateInfo(account)
+            it.setUpdateInfo(
+                password = awsProperties.kmsKey,
+                saltKey = awsProperties.saltKey,
+                ivKey = awsProperties.ivKey,
+                account = account
+            )
             findAndDeleteAllBanner(account)
-            noticeRepository.save(it).toResponse().also { response ->
-                addBannerToRedis(response.toRedisEntity())
+            noticeRepository.save(it).toResponse(awsProperties.kmsKey).also { response ->
+                addBannerToRedis(response.toRedisBannerEntity())
             }
         }
     }
@@ -259,8 +248,68 @@ class NoticeService(
     suspend fun deleteNoticeBanner(id: String, account: Account): Result<NoticeDetailResponse?, ErrorData> = executeIn {
         noticeRepository.findById(id)?.let {
             it.isBanner = false
-            it.setUpdateInfo(account)
-            noticeRepository.save(it).toResponse().also { deleteBannerFromRedis() }
+            it.setUpdateInfo(
+                password = awsProperties.kmsKey,
+                saltKey = awsProperties.saltKey,
+                ivKey = awsProperties.ivKey,
+                account = account
+            )
+            noticeRepository.save(it).toResponse(awsProperties.kmsKey).also { deleteBannerFromRedis() }
+        }
+    }
+
+    private fun checkRequestCondition(request: NoticeRequest): Boolean =
+        request.isBanner && !request.isDelete && request.isShow && !request.isDraft
+
+    private suspend fun applyToRedis() {
+        noticeRepository.getFixItems().map { item -> item.toRedisEntity() }.also { totalList ->
+            redisRepository.addOrUpdateRBucket(
+                bucketKey = CMS_NOTICE_FIX,
+                value = totalList.toList(),
+                typeReference = object : TypeReference<List<RedisBanner>>() {}
+            )
+        }.collect()
+    }
+
+    private suspend fun applyTopToRedis(limit: Int) {
+        noticeRepository.findByIsShowIsTrueAndIsDeleteIsFalseAndIsDraftIsFalseAndIsScheduleIsFalseOrderByScreenDateDesc(PageRequest.of(0, limit))
+            .map { it.toRedisEntity() }
+            .also { topList ->
+                redisRepository.addOrUpdateRBucket(
+                    bucketKey = CMS_NOTICE_RECENT,
+                    value = topList.toList(),
+                    typeReference = object : TypeReference<List<RedisBanner>>() {}
+                )
+            }.collect()
+    }
+
+    private suspend fun addBannerToRedis(redisEntity: RedisBanner) {
+        redisRepository.addOrUpdateRBucket(
+            bucketKey = CMS_NOTICE_BANNER,
+            value = redisEntity,
+            typeReference = object : TypeReference<RedisBanner>() {}
+        )
+    }
+
+    private suspend fun deleteBannerFromRedis() {
+        redisRepository.deleteRBucket(
+            bucketKey = CMS_NOTICE_BANNER,
+            typeReference = object : TypeReference<RedisBanner>() {}
+        )
+    }
+
+    private suspend fun findAndDeleteAllBanner(account: Account) {
+        noticeRepository.findByIsBannerIsTrueAndIsDraftIsFalseAndIsScheduleIsFalse().map { notice ->
+            notice.isBanner = false
+            notice.setUpdateInfo(
+                password = awsProperties.kmsKey,
+                saltKey = awsProperties.saltKey,
+                ivKey = awsProperties.ivKey,
+                account = account
+            )
+            return@map notice
+        }.toList().also { noticeList ->
+            noticeRepository.saveAll(noticeList).collect()
         }
     }
 }

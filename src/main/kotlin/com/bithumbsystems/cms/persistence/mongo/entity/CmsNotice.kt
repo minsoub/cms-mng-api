@@ -5,7 +5,8 @@ import com.bithumbsystems.cms.api.model.aggregate.Category
 import com.bithumbsystems.cms.api.model.constants.ShareConstants.NOTICE_TITLE
 import com.bithumbsystems.cms.api.model.request.FileRequest
 import com.bithumbsystems.cms.api.model.request.NoticeRequest
-import com.bithumbsystems.cms.persistence.redis.entity.RedisNotice
+import com.bithumbsystems.cms.api.util.EncryptionUtil.encryptAES
+import com.bithumbsystems.cms.persistence.redis.entity.RedisBanner
 import org.springframework.data.annotation.ReadOnlyProperty
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.MongoId
@@ -23,6 +24,7 @@ class CmsNotice(
     val createAccountEmail: String,
     var createDate: LocalDateTime = LocalDateTime.now()
 ) {
+    var searchContent: String? = "${title.trim()} | ${content.replace("&nbsp;", "").replace("<[^>]*>".toRegex(), "")}"
     var isFixTop: Boolean = false
     var isShow: Boolean = false
     var isDelete: Boolean = false
@@ -47,20 +49,28 @@ class CmsNotice(
     var categoryNames: List<Category> = listOf()
 }
 
-fun CmsNotice.setUpdateInfo(account: Account) {
+fun CmsNotice.setUpdateInfo(password: String, saltKey: String, ivKey: String, account: Account) {
+    isShow = when (isSchedule) {
+        true -> false
+        false -> isShow
+    }
     updateAccountId = account.accountId
-    updateAccountEmail = account.email
+    updateAccountEmail = account.email.encryptAES(password = password, saltKey = saltKey, ivKey = ivKey)
     updateDate = LocalDateTime.now()
 }
 
-fun CmsNotice.setUpdateInfo(request: NoticeRequest, account: Account, fileRequest: FileRequest?) {
+fun CmsNotice.setUpdateInfo(password: String, saltKey: String, ivKey: String, request: NoticeRequest, account: Account, fileRequest: FileRequest?) {
     categoryIds = request.categoryIds
     title = request.title
     isFixTop = request.isFixTop
-    isShow = request.isShow
+    isShow = when (isSchedule) {
+        true -> false
+        false -> request.isShow
+    }
     isDelete = request.isDelete
     isBanner = request.isBanner
     content = request.content
+    searchContent = "${title.trim()} | ${content.replace("&nbsp;", "").replace("<[^>]*>".toRegex(), "")}"
     fileId = fileRequest?.fileKey ?: request.fileId
     shareTitle = request.shareTitle ?: title
     shareDescription = request.shareDescription
@@ -68,10 +78,12 @@ fun CmsNotice.setUpdateInfo(request: NoticeRequest, account: Account, fileReques
     shareButtonName = request.shareButtonName ?: NOTICE_TITLE
     isSchedule = request.isSchedule
     scheduleDate = request.scheduleDate
-    isDraft = request.isDraft
-    readCount = request.readCount
+    isDraft = when {
+        isDraft && !request.isDraft -> false
+        else -> isDraft
+    }
     updateAccountId = account.accountId
-    updateAccountEmail = account.email
+    updateAccountEmail = account.email.encryptAES(password = password, saltKey = saltKey, ivKey = ivKey)
     updateDate = LocalDateTime.now()
     isUseUpdateDate = request.isUseUpdateDate
     isAlignTop = request.isAlignTop
@@ -79,9 +91,10 @@ fun CmsNotice.setUpdateInfo(request: NoticeRequest, account: Account, fileReques
     createDate = if (isUseUpdateDate) LocalDateTime.now() else createDate
 }
 
-fun CmsNotice.toRedisEntity(): RedisNotice = RedisNotice(
+fun CmsNotice.toRedisEntity(): RedisBanner = RedisBanner(
     id = id,
-    title = title,
-    categoryNames = categoryNames.map { it.name }.toList(),
-    createDate = createDate
+    title = when (categoryNames.isNotEmpty()) {
+        true -> "${categoryNames.map { it.name }.toString().replace(", ", "/")} $title"
+        false -> title
+    }
 )

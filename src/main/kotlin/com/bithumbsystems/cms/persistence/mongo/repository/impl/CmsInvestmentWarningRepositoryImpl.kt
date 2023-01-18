@@ -6,20 +6,16 @@ import com.bithumbsystems.cms.persistence.mongo.entity.CmsInvestmentWarning
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsBaseRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
-import kotlinx.coroutines.reactive.awaitSingle
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query
 import org.springframework.stereotype.Repository
 
 @Repository
 class CmsInvestmentWarningRepositoryImpl(
     private val reactiveMongoTemplate: ReactiveMongoTemplate
 ) : CmsBaseRepository<CmsInvestmentWarning> {
-    override suspend fun countByCriteria(criteria: Criteria): Long =
-        reactiveMongoTemplate.count(Query.query(criteria), CmsInvestmentWarning::class.java).awaitSingle()
 
     override fun findByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<CmsInvestmentWarning> =
         reactiveMongoTemplate.find(QueryUtil.buildQuery(criteria, pageable, sort), CmsInvestmentWarning::class.java)

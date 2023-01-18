@@ -29,87 +29,62 @@ class ParameterStoreConfig(
 
     init {
         mongoProperties = if (isLocalOrDefault) localMongoProperties else MongoProperties(
-            getParameterValue(
-                parameterStoreProperties.prefix,
-                parameterStoreProperties.docName,
-                ParameterStoreCode.DB_URL.value
+            mongodbUri = getParameterValue(
+                prefix = parameterStoreProperties.prefix, storeName = parameterStoreProperties.docName, type = ParameterStoreCode.DB_URL.value
             ),
-            getParameterValue(
-                parameterStoreProperties.prefix,
-                parameterStoreProperties.docName,
-                ParameterStoreCode.DB_USER.value
+            mongodbUser = getParameterValue(
+                prefix = parameterStoreProperties.prefix, storeName = parameterStoreProperties.docName, type = ParameterStoreCode.DB_USER.value
             ),
-            getParameterValue(
-                parameterStoreProperties.prefix,
-                parameterStoreProperties.docName,
-                ParameterStoreCode.DB_PASSWORD.value
+            mongodbPassword = getParameterValue(
+                prefix = parameterStoreProperties.prefix, storeName = parameterStoreProperties.docName, type = ParameterStoreCode.DB_PASSWORD.value
             ),
-            getParameterValue(
-                parameterStoreProperties.prefix,
-                parameterStoreProperties.docName,
-                ParameterStoreCode.DB_PORT.value
+            mongodbPort = getParameterValue(
+                prefix = parameterStoreProperties.prefix, storeName = parameterStoreProperties.docName, type = ParameterStoreCode.DB_PORT.value
             ),
-            getParameterValue(
-                parameterStoreProperties.prefix,
-                parameterStoreProperties.docName,
-                ParameterStoreCode.DB_NAME.value
+            mongodbName = getParameterValue(
+                prefix = parameterStoreProperties.prefix, storeName = parameterStoreProperties.docName, type = ParameterStoreCode.DB_NAME.value
             )
         )
 
         redisProperties = if (isLocalOrDefault) localRedisProperties else RedisProperties(
-            getParameterValue(
-                parameterStoreProperties.prefix,
-                parameterStoreProperties.redisName,
-                ParameterStoreCode.REDIS_HOST.value
+            host = getParameterValue(
+                prefix = parameterStoreProperties.prefix, storeName = parameterStoreProperties.redisName, type = ParameterStoreCode.REDIS_HOST.value
             ),
-            getParameterValue(
-                parameterStoreProperties.prefix,
-                parameterStoreProperties.redisName,
-                ParameterStoreCode.REDIS_PORT.value
+            port = getParameterValue(
+                prefix = parameterStoreProperties.prefix, storeName = parameterStoreProperties.redisName, type = ParameterStoreCode.REDIS_PORT.value
             ).toInt(),
-            getParameterValue(
-                parameterStoreProperties.prefix,
-                parameterStoreProperties.redisName,
-                ParameterStoreCode.REDIS_TOKEN.value
+            token = getParameterValue(
+                prefix = parameterStoreProperties.prefix, storeName = parameterStoreProperties.redisName, type = ParameterStoreCode.REDIS_TOKEN.value
             )
         )
 
-        awsProperties.kmsKey =
-            getParameterValue(
-                parameterStoreProperties.smartPrefix,
-                parameterStoreProperties.kmsName,
-                ParameterStoreCode.KMS_ALIAS_NAME.value
-            )
-        awsProperties.saltKey =
-            getParameterValue(
-                parameterStoreProperties.smartPrefix,
-                parameterStoreProperties.saltName,
-                ParameterStoreCode.KMS_ALIAS_NAME.value
-            )
-        awsProperties.ivKey =
-            getParameterValue(
-                parameterStoreProperties.smartPrefix,
-                parameterStoreProperties.ivName,
-                ParameterStoreCode.KMS_ALIAS_NAME.value
-            )
-        awsProperties.jwtSecretKey =
-            getParameterValue(
-                parameterStoreProperties.smartPrefix,
-                parameterStoreProperties.authName,
-                ParameterStoreCode.JWT_SECRET_KEY.value
-            )
-        awsProperties.cryptoKey =
-            getParameterValue(
-                parameterStoreProperties.smartPrefix,
-                parameterStoreProperties.cryptoName,
-                ParameterStoreCode.CRYPTO_KEY.value
-            )
+        awsProperties.kmsKey = getParameterValue(
+            prefix = parameterStoreProperties.smartPrefix,
+            storeName = parameterStoreProperties.kmsName,
+            type = ParameterStoreCode.KMS_ALIAS_NAME.value
+        )
+        awsProperties.saltKey = getParameterValue(
+            prefix = parameterStoreProperties.smartPrefix,
+            storeName = parameterStoreProperties.saltName,
+            type = ParameterStoreCode.KMS_ALIAS_NAME.value
+        )
+        awsProperties.ivKey = getParameterValue(
+            prefix = parameterStoreProperties.smartPrefix, storeName = parameterStoreProperties.ivName, type = ParameterStoreCode.KMS_ALIAS_NAME.value
+        )
+        awsProperties.jwtSecretKey = getParameterValue(
+            prefix = parameterStoreProperties.smartPrefix,
+            storeName = parameterStoreProperties.authName,
+            type = ParameterStoreCode.JWT_SECRET_KEY.value
+        )
+        awsProperties.cryptoKey = getParameterValue(
+            prefix = parameterStoreProperties.smartPrefix, storeName = parameterStoreProperties.cryptoName, type = ParameterStoreCode.CRYPTO_KEY.value
+        )
     }
 
     private final fun getParameterValue(
         prefix: String,
         storeName: String,
-        type: String
+        type: String,
     ): String {
         logger.info("getParameter: $prefix/${storeName}_$profileName/$type")
         return ssmClient.getParameter(

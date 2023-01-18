@@ -15,48 +15,52 @@ import javax.crypto.spec.GCMParameterSpec
 import javax.crypto.spec.PBEKeySpec
 import javax.crypto.spec.SecretKeySpec
 
-class EncryptionUtil {
-
+object EncryptionUtil {
     private val logger by Logger()
 
-    companion object {
-        private const val AES_ALGORITHM = "AES/GCM/NoPadding"
-        private const val TAG_LENGTH_BIT = 128 // must be one of {128, 120, 112, 104, 96}
+    private const val AES_ALGORITHM = "AES/GCM/NoPadding"
+    private const val TAG_LENGTH_BIT = 128 // must be one of {128, 120, 112, 104, 96}
 
-        private const val IV_LENGTH_BYTE = 12
-        private const val SALT_LENGTH_BYTE = 16
-        private val UTF_8 = StandardCharsets.UTF_8
+    private const val IV_LENGTH_BYTE = 12
+    private const val SALT_LENGTH_BYTE = 16
+    private val UTF_8 = StandardCharsets.UTF_8
 
-        private const val RSA_ALGORITHM = "RSA"
-        private const val DEFAULT_VALUE = ""
-    }
+    private const val RSA_ALGORITHM = "RSA"
+    private const val DEFAULT_VALUE = ""
 
     // string a base64 encoded AES encrypted text
-    fun String.encryptAES(password: String, plainMessage: String): String =
+    fun String.encryptAES(password: String): String =
         runCatching {
             // 16 bytes salt
             val salt = getRandomNonce(SALT_LENGTH_BYTE)
             // GCM recommends 12 bytes iv
             val iv = getRandomNonce(IV_LENGTH_BYTE)
-            encrypt(password, salt, iv, plainMessage)
+            encrypt(password, salt, iv, this)
         }.onFailure {
             logger.error(it.message)
         }.getOrDefault(DEFAULT_VALUE)
 
-    fun String.encryptAES(password: String, plainMessage: String, saltKey: String, ivKey: String): String =
+    fun String.encryptAES(password: String, saltKey: String, ivKey: String): String =
         runCatching {
             val decoder = Base64.getDecoder()
-            val salt: ByteArray = decoder.decode(saltKey.toByteArray(UTF_8))
-            val iv: ByteArray = decoder.decode(ivKey.toByteArray(UTF_8))
-            encrypt(password, salt, iv, plainMessage)
+            val salt: ByteArray = decoder.decode(
+                saltKey.replace('-', '+')
+                    .replace('_', '/').toByteArray(UTF_8)
+            )
+
+            val iv: ByteArray = decoder.decode(
+                ivKey.replace('-', '+')
+                    .replace('_', '/').toByteArray(UTF_8)
+            )
+            encrypt(password, salt, iv, this)
         }.onFailure {
             logger.error(it.message)
         }.getOrDefault(DEFAULT_VALUE)
 
     // we need the same password, salt and iv to decrypt it
-    fun String.decryptAES(password: String, cipherMessage: String): String =
+    fun String.decryptAES(password: String): String =
         runCatching {
-            val decode = Base64.getDecoder().decode(cipherMessage.toByteArray(UTF_8))
+            val decode = Base64.getDecoder().decode(this.toByteArray(UTF_8))
 
             // get back the iv and salt from the cipher text
             val bb = ByteBuffer.wrap(decode)

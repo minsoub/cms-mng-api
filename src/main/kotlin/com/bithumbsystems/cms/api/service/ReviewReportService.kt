@@ -1,5 +1,6 @@
 package com.bithumbsystems.cms.api.service
 
+import com.bithumbsystems.cms.api.config.aws.AwsProperties
 import com.bithumbsystems.cms.api.config.operator.ServiceOperator.executeIn
 import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.model.enums.RedisKeys.CMS_REVIEW_REPORT_FIX
@@ -33,8 +34,9 @@ import org.springframework.transaction.annotation.Transactional
 class ReviewReportService(
     private val reviewReportRepository: CmsReviewReportRepository,
     private val fileService: FileService,
-    private val redisRepository: RedisRepository
-) {
+    private val redisRepository: RedisRepository,
+    private val awsProperties: AwsProperties
+) : CmsBaseService() {
 
     /**
      * 검토보고서 생성
@@ -48,7 +50,10 @@ class ReviewReportService(
         account: Account
     ): Result<ReviewReportDetailResponse?, ErrorData> = executeIn(
         validator = {
-            request.validate() && fileRequest?.validate() == true
+            request.validate() && fileRequest?.validate() ?: true && validateScheduleDate(
+                request = request,
+                repository = reviewReportRepository
+            )
         },
         action = {
             coroutineScope {
@@ -57,12 +62,23 @@ class ReviewReportService(
                         launch {
                             fileService.addFileInfo(fileRequest = fileRequest, account = account)
                         }
-                        request.setCreateInfo(fileRequest = fileRequest, account = account)
+                        request.setCreateInfo(
+                            password = awsProperties.kmsKey,
+                            saltKey = awsProperties.saltKey,
+                            ivKey = awsProperties.ivKey,
+                            fileRequest = fileRequest,
+                            account = account
+                        )
                         request.thumbnailFileId = fileRequest.thumbnailFileKey
                     }
-                } ?: request.setCreateInfo(account)
+                } ?: request.setCreateInfo(
+                    password = awsProperties.kmsKey,
+                    saltKey = awsProperties.saltKey,
+                    ivKey = awsProperties.ivKey,
+                    account = account
+                )
 
-                reviewReportRepository.save(request.toEntity()).toResponse().also {
+                reviewReportRepository.save(request.toEntity()).toResponse(awsProperties.kmsKey).also {
                     if (it.isFixTop) {
                         applyToRedis()
                     }
@@ -70,16 +86,6 @@ class ReviewReportService(
             }
         }
     )
-
-    private suspend fun applyToRedis() {
-        reviewReportRepository.getFixItems().map { item -> item.toRedisEntity() }.toList().also { totalList ->
-            redisRepository.addOrUpdateRBucket(
-                bucketKey = CMS_REVIEW_REPORT_FIX,
-                value = totalList,
-                typeReference = object : TypeReference<List<RedisThumbnail>>() {}
-            )
-        }
-    }
 
     suspend fun getReviewReports(searchParams: SearchParams, account: Account): Result<ListResponse<ReviewReportResponse>?, ErrorData> = executeIn {
         coroutineScope {
@@ -102,14 +108,14 @@ class ReviewReportService(
                     pageable = Pageable.unpaged(),
                     sort = defaultSort
                 )
-                    .map { it.toMaskingResponse() }
+                    .map { it.toMaskingResponse(awsProperties.kmsKey) }
                     .toList()
             }
 
             val top: Deferred<List<ReviewReportResponse>> = async {
                 criteria = searchParams.buildCriteria(isFixTop = true, isDelete = false)
                 reviewReportRepository.findByCriteria(criteria = criteria, pageable = Pageable.unpaged(), sort = defaultSort)
-                    .map { it.toMaskingResponse() }
+                    .map { it.toMaskingResponse(awsProperties.kmsKey) }
                     .toList()
             }
 
@@ -121,7 +127,7 @@ class ReviewReportService(
     }
 
     suspend fun getReviewReport(id: String) = executeIn {
-        reviewReportRepository.findById(id)?.toResponse()
+        reviewReportRepository.findById(id)?.toResponse(awsProperties.kmsKey)
     }
 
     @Transactional
@@ -132,7 +138,10 @@ class ReviewReportService(
         account: Account
     ): Result<ReviewReportDetailResponse?, ErrorData> = executeIn(
         validator = {
-            request.validate() && fileRequest?.validate() == true
+            request.validate() && fileRequest?.validate() ?: true && validateScheduleDate(
+                request = request,
+                repository = reviewReportRepository
+            )
         },
         action = {
             coroutineScope {
@@ -145,9 +154,18 @@ class ReviewReportService(
                 }
 
                 reviewReportRepository.findById(id)?.let {
-                    val isChange: Boolean = it.isFixTop != request.isFixTop
-                    it.setUpdateInfo(request = request, account = account, fileRequest = fileRequest)
-                    reviewReportRepository.save(it).toResponse().also {
+                    val isChange: Boolean =
+                        it.isFixTop != request.isFixTop || it.isDelete != request.isDelete || it.isShow != request.isShow ||
+                            it.isSchedule != request.isSchedule || it.title != request.title || it.thumbnailUrl != request.thumbnailUrl
+                    it.setUpdateInfo(
+                        password = awsProperties.kmsKey,
+                        saltKey = awsProperties.saltKey,
+                        ivKey = awsProperties.ivKey,
+                        request = request,
+                        account = account,
+                        fileRequest = fileRequest
+                    )
+                    reviewReportRepository.save(it).toResponse(awsProperties.kmsKey).also {
                         if (isChange) {
                             applyToRedis()
                         }
@@ -161,17 +179,32 @@ class ReviewReportService(
     suspend fun deleteReviewReport(id: String, account: Account): Result<ReviewReportDetailResponse?, ErrorData> = executeIn {
         reviewReportRepository.findById(id)?.let {
             when (it.isDelete) {
-                true -> it.toResponse()
+                true -> it.toResponse(awsProperties.kmsKey)
                 false -> {
                     it.isDelete = true
-                    it.setUpdateInfo(account)
-                    reviewReportRepository.save(it).toResponse().also { response ->
+                    it.setUpdateInfo(
+                        password = awsProperties.kmsKey,
+                        saltKey = awsProperties.saltKey,
+                        ivKey = awsProperties.ivKey,
+                        account = account
+                    )
+                    reviewReportRepository.save(it).toResponse(awsProperties.kmsKey).also { response ->
                         if (response.isFixTop) {
                             applyToRedis()
                         }
                     }
                 }
             }
+        }
+    }
+
+    private suspend fun applyToRedis() {
+        reviewReportRepository.getFixItems().map { item -> item.toRedisEntity() }.toList().also { totalList ->
+            redisRepository.addOrUpdateRBucket(
+                bucketKey = CMS_REVIEW_REPORT_FIX,
+                value = totalList,
+                typeReference = object : TypeReference<List<RedisThumbnail>>() {}
+            )
         }
     }
 }

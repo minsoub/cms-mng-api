@@ -7,7 +7,7 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface CmsNoticeRepository : CmsCommonRepository<CmsNotice> {
-    fun findByIsShowIsTrueAndIsDeleteIsFalseAndIsDraftIsFalseOrderByScreenDateDesc(pageable: Pageable): Flow<CmsNotice>
+    fun findByIsShowIsTrueAndIsDeleteIsFalseAndIsDraftIsFalseAndIsScheduleIsFalseOrderByScreenDateDesc(pageable: Pageable): Flow<CmsNotice>
 
     fun findByIsBannerIsTrueAndIsDraftIsFalseAndIsScheduleIsFalse(): Flow<CmsNotice>
 }

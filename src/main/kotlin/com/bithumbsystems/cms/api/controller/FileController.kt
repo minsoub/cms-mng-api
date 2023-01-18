@@ -46,11 +46,10 @@ class FileController(
             content = [Content(mediaType = APPLICATION_OCTET_STREAM_VALUE)]
         )
         file: FilePart,
-        @RequestHeader("Content-Length", required = false) contentLength: Long,
         @Parameter(hidden = true) @CurrentUser
         account: Account
     ): ResponseEntity<Response<Any>> = execute {
-        fileService.addFileInfo(file = file, account = account, fileSize = contentLength)
+        fileService.addFileInfo(file = file, account = account)
     }
 
     @PostMapping("/image", consumes = [MediaType.MULTIPART_FORM_DATA_VALUE])
@@ -72,11 +71,10 @@ class FileController(
             content = [Content(mediaType = APPLICATION_OCTET_STREAM_VALUE)]
         )
         file: FilePart,
-        @RequestHeader("Content-Length", required = false) contentLength: Long,
         @Parameter(hidden = true) @CurrentUser
         account: Account
     ): ResponseEntity<ImageFileInfoResponse> {
-        return ResponseEntity.ok(fileService.addImageFileInfo(file = file, account = account, fileSize = contentLength))
+        return ResponseEntity.ok(fileService.addImageFileInfo(file = file, account = account))
     }
 
     @GetMapping("/{fileKey}", produces = [APPLICATION_OCTET_STREAM_VALUE])

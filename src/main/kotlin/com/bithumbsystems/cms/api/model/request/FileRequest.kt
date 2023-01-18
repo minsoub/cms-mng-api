@@ -1,7 +1,6 @@
 package com.bithumbsystems.cms.api.model.request
 
-import com.bithumbsystems.cms.api.model.constants.ConstraintConstants.MAX_FILE_SIZE
-import kotlinx.coroutines.reactor.awaitSingleOrNull
+import com.bithumbsystems.cms.api.util.validate
 import org.springframework.http.codec.multipart.FilePart
 import org.springframework.http.codec.multipart.Part
 import java.util.*
@@ -24,24 +23,22 @@ class FileRequest(
 }
 
 fun FileRequest.setKeys() {
-    takeIf { it.file != null }?.let {
+    file?.let {
         fileKey = UUID.randomUUID().toString().replace("-", "")
     }
 
-    takeIf { it.shareFile != null }?.let {
+    shareFile?.let {
         shareFileKey = UUID.randomUUID().toString().replace("-", "")
     }
 
-    takeIf { it.thumbnailFile != null }?.let {
+    thumbnailFile?.let {
         thumbnailFileKey = UUID.randomUUID().toString().replace("-", "")
     }
 }
 
 suspend fun FileRequest?.validate(): Boolean {
-    return when {
-        (this?.file?.content()?.count()?.awaitSingleOrNull() ?: 0) > MAX_FILE_SIZE -> false
-        (this?.shareFile?.content()?.count()?.awaitSingleOrNull() ?: 0) > MAX_FILE_SIZE -> false
-        (this?.thumbnailFile?.content()?.count()?.awaitSingleOrNull() ?: 0) > MAX_FILE_SIZE -> false
-        else -> true
-    }
+    this?.file?.validate()
+    this?.shareFile?.validate()
+    this?.thumbnailFile?.validate()
+    return true
 }

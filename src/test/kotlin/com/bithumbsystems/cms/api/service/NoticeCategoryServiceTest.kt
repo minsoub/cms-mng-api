@@ -1,11 +1,15 @@
 package com.bithumbsystems.cms.api.service
 
+import com.bithumbsystems.cms.api.config.aws.AwsProperties
 import com.bithumbsystems.cms.api.config.resolver.Account
-import com.bithumbsystems.cms.api.model.enums.RedisKeys.*
+import com.bithumbsystems.cms.api.model.enums.RedisKeys.CMS_NOTICE_CATEGORY
 import com.bithumbsystems.cms.api.model.request.NoticeCategoryRequest
 import com.bithumbsystems.cms.api.model.request.SearchParams
 import com.bithumbsystems.cms.api.model.request.toEntity
-import com.bithumbsystems.cms.api.model.response.*
+import com.bithumbsystems.cms.api.model.response.ErrorData
+import com.bithumbsystems.cms.api.model.response.ListResponse
+import com.bithumbsystems.cms.api.model.response.NoticeCategoryDetailResponse
+import com.bithumbsystems.cms.api.model.response.NoticeCategoryResponse
 import com.bithumbsystems.cms.api.util.QueryUtil.buildCriteria
 import com.bithumbsystems.cms.api.util.QueryUtil.buildSort
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsNoticeCategory
@@ -42,18 +46,32 @@ class NoticeCategoryServiceTest {
     private lateinit var noticeCategoryService: NoticeCategoryService
     private lateinit var noticeCategoryRepository: CmsNoticeCategoryRepository
     private lateinit var redisRepository: RedisRepository
+    private lateinit var awsProperties: AwsProperties
 
     private val randomUUID = UUID.randomUUID().toString().replace("-", "")
     private lateinit var account: Account
     private lateinit var request: NoticeCategoryRequest
+    private val ivKey = "6xCNtHMFNjLk1ldO"
+    private val saltKey = "3vVDyR_6aCONXL65j5f0CA"
+    private val kmsKey = "eee6a9bd-4abd-4803-90bd-d943a019"
 
     @BeforeAll
     fun beforeAll() {
         noticeCategoryRepository = mockk()
         // noticeCustomRepository = mockk()
         redisRepository = mockk()
+        awsProperties = mockk()
+        coEvery {
+            awsProperties.ivKey
+        } returns ivKey
+        coEvery {
+            awsProperties.saltKey
+        } returns saltKey
+        coEvery {
+            awsProperties.kmsKey
+        } returns kmsKey
         noticeCategoryService = spyk(
-            objToCopy = NoticeCategoryService(noticeCategoryRepository, redisRepository),
+            objToCopy = NoticeCategoryService(noticeCategoryRepository, redisRepository, awsProperties),
             recordPrivateCalls = true
         )
         account = Account(accountId = "id", email = "user@example.com", userIp = "127.0.0.1", roles = setOf("admin"), mySiteId = "siteId")
@@ -96,10 +114,6 @@ class NoticeCategoryServiceTest {
         val sort: Sort = searchParams.buildSort()
 
         coEvery {
-            noticeCategoryRepository.countByCriteria(criteria)
-        } returns 1
-
-        coEvery {
             searchParams.page?.let { PageRequest.of(it, 1) }?.let { noticeCategoryRepository.findByCriteria(criteria, it, sort) }
         } returns flowOf(NoticeCategoryRequest(name = randomUUID, isUse = false).toEntity())
 
@@ -134,7 +148,7 @@ class NoticeCategoryServiceTest {
         } returns entity
 
         request = NoticeCategoryRequest(name = newName, isUse = false, isDelete = false)
-        entity.setUpdateInfo(request, account)
+        entity.setUpdateInfo(password = kmsKey, ivKey = ivKey, saltKey = saltKey, request = request, account = account)
 
         coEvery {
             noticeCategoryRepository.save(any())
@@ -164,7 +178,7 @@ class NoticeCategoryServiceTest {
         } returns entity
 
         request = NoticeCategoryRequest(name = randomUUID, isUse = false, isDelete = true)
-        entity.setUpdateInfo(request, account)
+        entity.setUpdateInfo(password = kmsKey, ivKey = ivKey, saltKey = saltKey, request = request, account = account)
 
         coEvery {
             noticeCategoryRepository.save(any())
@@ -202,7 +216,7 @@ class NoticeCategoryServiceTest {
         } returns entity
 
         entity.isDelete = true
-        entity.setUpdateInfo(account)
+        entity.setUpdateInfo(password = kmsKey, ivKey = ivKey, saltKey = saltKey, account = account)
 
         coEvery {
             noticeCategoryRepository.save(any())

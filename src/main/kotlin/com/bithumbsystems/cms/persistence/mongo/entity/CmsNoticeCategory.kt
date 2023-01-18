@@ -2,6 +2,7 @@ package com.bithumbsystems.cms.persistence.mongo.entity
 
 import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.model.request.NoticeCategoryRequest
+import com.bithumbsystems.cms.api.util.EncryptionUtil.encryptAES
 import com.bithumbsystems.cms.persistence.redis.entity.RedisNoticeCategory
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.MongoId
@@ -24,18 +25,18 @@ class CmsNoticeCategory(
     var updateDate: LocalDateTime? = null
 }
 
-fun CmsNoticeCategory.setUpdateInfo(account: Account) {
+fun CmsNoticeCategory.setUpdateInfo(password: String, saltKey: String, ivKey: String, account: Account) {
     updateAccountId = account.accountId
-    updateAccountEmail = account.email
+    updateAccountEmail = account.email.encryptAES(password = password, saltKey = saltKey, ivKey = ivKey)
     updateDate = LocalDateTime.now()
 }
 
-fun CmsNoticeCategory.setUpdateInfo(request: NoticeCategoryRequest, account: Account) {
+fun CmsNoticeCategory.setUpdateInfo(password: String, saltKey: String, ivKey: String, request: NoticeCategoryRequest, account: Account) {
     name = request.name
     isUse = request.isUse
     isDelete = request.isDelete
     updateAccountId = account.accountId
-    updateAccountEmail = account.email
+    updateAccountEmail = account.email.encryptAES(password = password, saltKey = saltKey, ivKey = ivKey)
     updateDate = LocalDateTime.now()
 }
 

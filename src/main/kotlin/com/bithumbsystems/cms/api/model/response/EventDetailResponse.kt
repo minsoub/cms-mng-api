@@ -3,6 +3,7 @@ package com.bithumbsystems.cms.api.model.response
 import com.bithumbsystems.cms.api.model.enums.EventTarget
 import com.bithumbsystems.cms.api.model.enums.EventType
 import com.bithumbsystems.cms.api.model.request.Message
+import com.bithumbsystems.cms.api.util.EncryptionUtil.decryptAES
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsEvent
 import com.bithumbsystems.cms.persistence.redis.entity.RedisBoard
 import io.swagger.v3.oas.annotations.media.Schema
@@ -48,7 +49,9 @@ class EventDetailResponse(
     var eventStartDate: LocalDateTime? = null,
     @Schema(description = "이벤트 종료일", example = "2022-12-07 11:11:11")
     var eventEndDate: LocalDateTime? = null,
-    @Schema(description = "개인정보 수집 및 이용 동의 문구", example = "개인정보 수집 및 이용 동의 문구")
+    @Schema(description = "개인정보 수집 및 이용 동의 문구 제목", example = "개인정보 수집 및 이용 동의 문구")
+    var agreementTitle: String? = null,
+    @Schema(description = "개인정보 수집 및 이용 동의 문구 본문", example = "개인정보 수집 및 이용 동의 문구")
     var agreementContent: String? = null,
     @Schema(description = "버튼명", example = "이벤트 버튼명")
     var buttonName: String? = null,
@@ -88,7 +91,7 @@ fun EventDetailResponse.toRedisEntity(): RedisBoard = RedisBoard(
  * CmsPressRelease Entity를 PressReleaseDetailResponse 변환한다.
  * @return 마스킹 처리되지 않은 응답
  */
-fun CmsEvent.toResponse(): EventDetailResponse = EventDetailResponse(
+fun CmsEvent.toResponse(password: String): EventDetailResponse = EventDetailResponse(
     id = id,
     title = title,
     content = content,
@@ -108,6 +111,7 @@ fun CmsEvent.toResponse(): EventDetailResponse = EventDetailResponse(
     target = target,
     eventStartDate = eventStartDate,
     eventEndDate = eventEndDate,
+    agreementTitle = agreementTitle,
     agreementContent = agreementContent,
     buttonName = buttonName,
     buttonColor = buttonColor,
@@ -117,9 +121,9 @@ fun CmsEvent.toResponse(): EventDetailResponse = EventDetailResponse(
     isAlignTop = isAlignTop,
     screenDate = screenDate,
     createAccountId = createAccountId,
-    createAccountEmail = createAccountEmail,
+    createAccountEmail = createAccountEmail.decryptAES(password),
     createDate = createDate,
     updateAccountId = updateAccountId,
-    updateAccountEmail = updateAccountEmail,
+    updateAccountEmail = updateAccountEmail?.decryptAES(password),
     updateDate = updateDate
 )

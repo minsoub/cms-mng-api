@@ -4,6 +4,7 @@ import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.model.constants.ShareConstants.INVEST_WARNING_TITLE
 import com.bithumbsystems.cms.api.model.request.FileRequest
 import com.bithumbsystems.cms.api.model.request.InvestmentWarningRequest
+import com.bithumbsystems.cms.api.util.EncryptionUtil.encryptAES
 import com.bithumbsystems.cms.persistence.redis.entity.RedisBoard
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.MongoId
@@ -40,16 +41,30 @@ class CmsInvestmentWarning(
     var updateDate: LocalDateTime? = null
 }
 
-fun CmsInvestmentWarning.setUpdateInfo(account: Account) {
+fun CmsInvestmentWarning.setUpdateInfo(password: String, saltKey: String, ivKey: String, account: Account) {
+    isShow = when (isSchedule) {
+        true -> false
+        false -> isShow
+    }
     updateAccountId = account.accountId
-    updateAccountEmail = account.email
+    updateAccountEmail = account.email.encryptAES(password = password, saltKey = saltKey, ivKey = ivKey)
     updateDate = LocalDateTime.now()
 }
 
-fun CmsInvestmentWarning.setUpdateInfo(request: InvestmentWarningRequest, account: Account, fileRequest: FileRequest?) {
+fun CmsInvestmentWarning.setUpdateInfo(
+    password: String,
+    saltKey: String,
+    ivKey: String,
+    request: InvestmentWarningRequest,
+    account: Account,
+    fileRequest: FileRequest?
+) {
     title = request.title
     isFixTop = request.isFixTop
-    isShow = request.isShow
+    isShow = when (isSchedule) {
+        true -> false
+        false -> request.isShow
+    }
     isDelete = request.isDelete
     content = request.content
     fileId = fileRequest?.fileKey ?: request.fileId
@@ -59,10 +74,12 @@ fun CmsInvestmentWarning.setUpdateInfo(request: InvestmentWarningRequest, accoun
     shareButtonName = request.shareButtonName ?: INVEST_WARNING_TITLE
     isSchedule = request.isSchedule
     scheduleDate = request.scheduleDate
-    isDraft = request.isDraft
-    readCount = request.readCount
+    isDraft = when {
+        isDraft && !request.isDraft -> false
+        else -> isDraft
+    }
     updateAccountId = account.accountId
-    updateAccountEmail = account.email
+    updateAccountEmail = account.email.encryptAES(password = password, saltKey = saltKey, ivKey = ivKey)
     updateDate = LocalDateTime.now()
     isUseUpdateDate = request.isUseUpdateDate
     isAlignTop = request.isAlignTop

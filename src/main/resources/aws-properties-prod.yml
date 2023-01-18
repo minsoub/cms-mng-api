@@ -1,0 +1,23 @@
+cloud:
+    aws:
+        credentials:
+            profile-name: ${aws.default.profile:prod}
+            instanceProfile: true
+        stack:
+            auto: ${auth.aws.stack.auto:false}
+        s3:
+            bucket: ${auth.aws.s3.bucket:cms-dev-s3-bucket}
+            url: https://cms-dev-s3-bucket.s3.ap-northeast-2.amazonaws.com
+        region:
+            static: ${auth.aws.region:ap-northeast-2}
+            auto: ${auth.aws.region.auto:false}
+        ssm:
+            endpoint: https://ssm.ap-northeast-2.amazonaws.com
+        kms:
+            endpoint: https://kms.ap-northeast-2.amazonaws.com
+        sqs:
+            endpoint: https://sqs.ap-northeast-2.amazonaws.com
+            program:
+                queue-name: program_queue_dev.fifo
+            reason:
+                queue-name: privacy_reason_queue_dev.fifo

@@ -1,6 +1,7 @@
 package com.bithumbsystems.cms.api.model.response
 
-import com.bithumbsystems.cms.api.util.MaskingUtil.getEmailMask
+import com.bithumbsystems.cms.api.util.EncryptionUtil.decryptAES
+import com.bithumbsystems.cms.api.util.MaskingUtil.toEmailMask
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsReviewReport
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
@@ -33,7 +34,7 @@ class ReviewReportResponse(
  * CmsReviewReport Entity를 ReviewReportResponse 변환한다.
  * @return 마스킹 처리된 응답
  */
-fun CmsReviewReport.toMaskingResponse(): ReviewReportResponse = ReviewReportResponse(
+fun CmsReviewReport.toMaskingResponse(password: String): ReviewReportResponse = ReviewReportResponse(
     id = id,
     title = title,
     isFixTop = isFixTop,
@@ -41,7 +42,7 @@ fun CmsReviewReport.toMaskingResponse(): ReviewReportResponse = ReviewReportResp
     isDraft = isDraft,
     readCount = readCount,
     screenDate = screenDate,
-    createAccountEmail = createAccountEmail.getEmailMask(),
+    createAccountEmail = createAccountEmail.decryptAES(password).toEmailMask(),
     createDate = createDate,
     updateDate = updateDate
 )

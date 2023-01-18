@@ -1,5 +1,6 @@
 package com.bithumbsystems.cms.api.model.response
 
+import com.bithumbsystems.cms.api.util.EncryptionUtil.decryptAES
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsNoticeCategory
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
@@ -48,15 +49,15 @@ fun NoticeCategoryDetailResponse.toEntity(): CmsNoticeCategory {
  * CmsNoticeCategory Entity를 NoticeCategoryDetailResponse 변환한다.
  * @return 마스킹 처리되지 않은 응답
  */
-fun CmsNoticeCategory.toResponse(): NoticeCategoryDetailResponse = NoticeCategoryDetailResponse(
+fun CmsNoticeCategory.toResponse(password: String): NoticeCategoryDetailResponse = NoticeCategoryDetailResponse(
     id = id,
     name = name,
     isUse = isUse,
     isDelete = isDelete,
     createAccountId = createAccountId,
-    createAccountEmail = createAccountEmail,
+    createAccountEmail = createAccountEmail.decryptAES(password),
     createDate = createDate,
     updateAccountId = updateAccountId,
-    updateAccountEmail = updateAccountEmail,
+    updateAccountEmail = updateAccountEmail?.decryptAES(password),
     updateDate = updateDate
 )

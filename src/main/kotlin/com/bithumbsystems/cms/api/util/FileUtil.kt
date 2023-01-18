@@ -2,9 +2,13 @@ package com.bithumbsystems.cms.api.util
 
 import com.bithumbsystems.cms.api.config.aws.AwsProperties
 import com.bithumbsystems.cms.api.exception.UploadFailedException
+import com.bithumbsystems.cms.api.exception.ValidationException
+import com.bithumbsystems.cms.api.model.constants.ConstraintConstants
 import com.bithumbsystems.cms.api.model.constants.ConstraintConstants.S3_BUFFER_SIZE
+import com.bithumbsystems.cms.api.model.enums.ErrorCode
 import com.bithumbsystems.cms.api.model.enums.FileExtensionType
 import com.bithumbsystems.cms.api.util.EnumUtil.findBy
+import kotlinx.coroutines.reactor.awaitSingleOrNull
 import org.apache.commons.io.FilenameUtils
 import org.springframework.core.io.buffer.DataBuffer
 import org.springframework.http.MediaType
@@ -17,25 +21,29 @@ import software.amazon.awssdk.core.async.AsyncResponseTransformer
 import software.amazon.awssdk.core.async.ResponsePublisher
 import software.amazon.awssdk.services.s3.S3AsyncClient
 import software.amazon.awssdk.services.s3.model.*
+import java.net.URLEncoder
 import java.nio.ByteBuffer
-import java.util.*
 import java.util.concurrent.CompletableFuture
-
-fun FilePart.upload(s3AsyncClient: S3AsyncClient, bucket: String): String {
-    val fileKey: String = UUID.randomUUID().toString().replace("-", "")
-    saveFile(fileKey, s3AsyncClient, bucket, this).subscribe()
-    return fileKey
-}
 
 fun FilePart.upload(fileKey: String, s3AsyncClient: S3AsyncClient, bucket: String): String {
     saveFile(fileKey, s3AsyncClient, bucket, this).subscribe()
     return fileKey
 }
 
+suspend fun FilePart.validate(): Boolean {
+    takeIf { (this.content().count().awaitSingleOrNull() ?: 0) > ConstraintConstants.MAX_FILE_SIZE }?.let {
+        throw ValidationException(ErrorCode.INVALID_FILE_SIZE.message)
+    }
+    takeIf { FileExtensionType::name findBy (FilenameUtils.getExtension(this.filename())) == null }?.let {
+        throw ValidationException(ErrorCode.INVALID_FILE_FORMAT.message)
+    }
+    return true
+}
+
 fun String.getFileName(): String = FilenameUtils.getBaseName(this)
 
 fun String.getFileExtensionType(): FileExtensionType =
-    (FileExtensionType::name findBy (FilenameUtils.getExtension(this))) ?: throw IllegalArgumentException("파일 확장자가 올바르지 않습니다.")
+    (FileExtensionType::name findBy (FilenameUtils.getExtension(this))) ?: throw ValidationException(ErrorCode.INVALID_FILE_FORMAT.message)
 
 fun String.getS3Url(): String =
     KotlinAwsProperties.awsProperties.let {
@@ -78,7 +86,7 @@ private class UploadState(var bucket: String, var fileKey: String) {
 
 fun saveFile(fileKey: String, s3AsyncClient: S3AsyncClient, bucket: String, part: FilePart): Mono<String> {
     val metadata: MutableMap<String, String> = HashMap()
-    metadata["filename"] = part.filename()
+    metadata["filename"] = URLEncoder.encode(part.filename(), Charsets.UTF_8)
     val uploadState = UploadState(bucket, fileKey)
     return Mono
         .fromFuture(

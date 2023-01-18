@@ -18,7 +18,7 @@ object GsonUtil {
         .disableHtmlEscaping()
         .setPrettyPrinting()
         .setPrettyPrinting()
-        .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter().nullSafe()) // todo
+        .registerTypeAdapter(LocalDate::class.java, LocalDateTypeAdapter().nullSafe())
         .create()
 }
 

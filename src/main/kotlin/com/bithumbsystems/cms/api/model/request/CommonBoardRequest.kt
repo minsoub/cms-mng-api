@@ -1,6 +1,9 @@
 package com.bithumbsystems.cms.api.model.request
 
 import com.bithumbsystems.cms.api.config.resolver.Account
+import com.bithumbsystems.cms.api.exception.ValidationException
+import com.bithumbsystems.cms.api.model.enums.ErrorCode
+import com.bithumbsystems.cms.api.util.EncryptionUtil.encryptAES
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
 import javax.validation.constraints.Future
@@ -81,27 +84,59 @@ open class CommonBoardRequest(
     var updateDate: LocalDateTime? = null
 
     fun validate(): Boolean {
-        return when {
-            title.length > 100 || content.isBlank() || (shareTitle?.length ?: 0) > 50 || (shareDescription?.length ?: 0) > 100 ||
-                (shareButtonName?.length ?: 0) > 10 || (scheduleDate?.isBefore(LocalDateTime.now()) == true) -> {
-                false
-            }
+        when {
+            scheduleDate?.isBefore(LocalDateTime.now()) == true -> ErrorCode.INVALID_SCHEDULE_DATE.message
 
-            else -> {
-                true
-            }
+            content.isBlank() -> ErrorCode.NO_CONTENT.message
+
+            title.length > 100 -> ErrorCode.INVALID_TITLE.message
+
+            (shareTitle?.length ?: 0) > 50 -> ErrorCode.INVALID_SHARE_TITLE.message
+
+            (shareDescription?.length ?: 0) > 100 -> ErrorCode.INVALID_SHARE_DESCRIPTION.message
+
+            (shareButtonName?.length ?: 0) > 10 -> ErrorCode.INVALID_SHARE_BUTTON_NAME.message
+
+            else -> null
+        }?.let {
+            throw ValidationException(it)
         }
+        return true
     }
 }
 
-fun CommonBoardRequest.setCreateInfo(account: Account) {
-    createAccountEmail = account.email
+fun CommonBoardRequest.setCreateInfo(password: String, saltKey: String, ivKey: String, account: Account) {
+    isShow = when (isSchedule) {
+        true -> false
+        false -> isShow
+    }
+    isDraft = when (isSchedule) {
+        true -> false
+        false -> isDraft
+    }
+    isDelete = when (isSchedule) {
+        true -> false
+        false -> isDelete
+    }
+    createAccountEmail = account.email.encryptAES(password = password, saltKey = saltKey, ivKey = ivKey)
     createAccountId = account.accountId
 }
 
-fun CommonBoardRequest.setCreateInfo(fileRequest: FileRequest, account: Account) {
+fun CommonBoardRequest.setCreateInfo(password: String, saltKey: String, ivKey: String, fileRequest: FileRequest, account: Account) {
+    isShow = when (isSchedule) {
+        true -> false
+        false -> isShow
+    }
+    isDraft = when (isSchedule) {
+        true -> false
+        false -> isDraft
+    }
+    isDelete = when (isSchedule) {
+        true -> false
+        false -> isDelete
+    }
     fileId = fileRequest.fileKey
     shareFileId = fileRequest.shareFileKey
-    createAccountEmail = account.email
+    createAccountEmail = account.email.encryptAES(password = password, saltKey = saltKey, ivKey = ivKey)
     createAccountId = account.accountId
 }
