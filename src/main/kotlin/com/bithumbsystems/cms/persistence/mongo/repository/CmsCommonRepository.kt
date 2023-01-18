@@ -2,6 +2,7 @@ package com.bithumbsystems.cms.persistence.mongo.repository
 
 import kotlinx.coroutines.flow.Flow
 import org.springframework.data.domain.Pageable
+import org.springframework.data.domain.Range
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.repository.NoRepositoryBean
@@ -17,5 +18,5 @@ interface CmsCommonRepository<T> : CoroutineSortingRepository<T, String> {
 
     fun getFixItems(): Flow<T>
 
-    fun findByScheduleDateIsBetween(startTime: LocalDateTime, endTime: LocalDateTime): Flow<T>
+    fun findByScheduleDateIsBetween(dateTimeRange: Range<LocalDateTime>): Flow<T>
 }
