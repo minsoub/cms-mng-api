@@ -1,5 +1,6 @@
 package com.bithumbsystems.cms.api.service
 
+import com.bithumbsystems.cms.api.config.aws.AwsProperties
 import com.bithumbsystems.cms.api.config.operator.ServiceOperator.executeIn
 import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.model.enums.RedisKeys.CMS_NOTICE_CATEGORY
@@ -21,6 +22,7 @@ import com.github.michaelbull.result.Result
 import kotlinx.coroutines.Deferred
 import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
+import kotlinx.coroutines.flow.collect
 import kotlinx.coroutines.flow.map
 import kotlinx.coroutines.flow.toList
 import org.springframework.data.domain.Pageable
@@ -31,7 +33,8 @@ import org.springframework.transaction.annotation.Transactional
 @Service
 class NoticeCategoryService(
     private val noticeCategoryRepository: CmsNoticeCategoryRepository,
-    private val redisRepository: RedisRepository
+    private val redisRepository: RedisRepository,
+    private val awsProperties: AwsProperties
 ) {
 
     /**
@@ -41,12 +44,17 @@ class NoticeCategoryService(
      */
     @Transactional
     suspend fun createCategory(request: NoticeCategoryRequest, account: Account): Result<NoticeCategoryDetailResponse?, ErrorData> = executeIn {
-        request.setCreateInfo(account)
+        request.setCreateInfo(
+            password = awsProperties.kmsKey,
+            saltKey = awsProperties.saltKey,
+            ivKey = awsProperties.ivKey,
+            account = account
+        )
 
         val entity: CmsNoticeCategory = request.toEntity()
 
-        noticeCategoryRepository.save(entity).toResponse().also {
-            if (it.isUse) {
+        noticeCategoryRepository.save(entity).toResponse(awsProperties.kmsKey).also {
+            if (it.isUse && !it.isDelete) {
                 applyToRedis()
             }
         }
@@ -54,18 +62,18 @@ class NoticeCategoryService(
 
     private suspend fun applyToRedis() {
         noticeCategoryRepository.findByCriteria(
-            criteria = Criteria.where("is_delete").`is`(false),
+            criteria = Criteria.where("is_delete").`is`(false).and("is_use").`is`(true),
             pageable = Pageable.unpaged(),
             sort = buildSort()
         )
             .map { response -> response.toRedisEntity() }
-            .toList().also { totalList ->
+            .also { totalList ->
                 redisRepository.addOrUpdateRBucket(
                     bucketKey = CMS_NOTICE_CATEGORY,
-                    value = totalList,
+                    value = totalList.toList(),
                     typeReference = object : TypeReference<List<RedisNoticeCategory>>() {}
                 )
-            }
+            }.collect()
     }
 
     /**
@@ -82,7 +90,7 @@ class NoticeCategoryService(
                     pageable = Pageable.unpaged(),
                     sort = buildSort()
                 )
-                    .map { it.toMaskingResponse() }
+                    .map { it.toMaskingResponse(awsProperties.kmsKey) }
                     .toList()
             }
 
@@ -117,7 +125,7 @@ class NoticeCategoryService(
      * @param id 조회할 카테고리 아이디
      */
     suspend fun getCategory(id: String): Result<NoticeCategoryDetailResponse?, ErrorData> = executeIn {
-        noticeCategoryRepository.findById(id)?.toResponse()
+        noticeCategoryRepository.findById(id)?.toResponse(awsProperties.kmsKey)
     }
 
     /**
@@ -131,8 +139,14 @@ class NoticeCategoryService(
         executeIn {
             val category: CmsNoticeCategory? = getCategory(id).component1()?.toEntity()
             category?.let {
-                category.setUpdateInfo(request = request, account = account)
-                noticeCategoryRepository.save(category).toResponse().also {
+                category.setUpdateInfo(
+                    password = awsProperties.kmsKey,
+                    saltKey = awsProperties.saltKey,
+                    ivKey = awsProperties.ivKey,
+                    request = request,
+                    account = account
+                )
+                noticeCategoryRepository.save(category).toResponse(awsProperties.kmsKey).also {
                     applyToRedis()
                 }
             }
@@ -146,14 +160,19 @@ class NoticeCategoryService(
     @Transactional
     suspend fun deleteCategory(id: String, account: Account): Result<NoticeCategoryDetailResponse?, ErrorData> = executeIn {
         getCategory(id).component1()?.toEntity()?.let {
-            if (it.isDelete) it.toResponse()
+            if (it.isDelete) it.toResponse(awsProperties.kmsKey)
             else {
                 it.isDelete = true
-                it.setUpdateInfo(account)
+                it.setUpdateInfo(
+                    password = awsProperties.kmsKey,
+                    saltKey = awsProperties.saltKey,
+                    ivKey = awsProperties.ivKey,
+                    account = account
+                )
 
                 noticeCategoryRepository.save(it).also {
                     applyToRedis()
-                }.toResponse()
+                }.toResponse(awsProperties.kmsKey)
             }
         }
     }

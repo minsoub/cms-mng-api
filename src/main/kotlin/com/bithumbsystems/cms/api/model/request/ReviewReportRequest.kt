@@ -15,7 +15,7 @@ class ReviewReportRequest(
     @field:NotBlank
     override val content: String
 ) : CommonBoardRequest(title = title, content = content) {
-    @Schema(description = "썸네일 파일 아이디", example = "59f07bfd7490409b99c00b13bb50372e", hidden = true)
+    @Schema(description = "썸네일 파일 아이디", example = "59f07bfd7490409b99c00b13bb50372e")
     var thumbnailFileId: String? = null
 
     @Schema(description = "썸네일 URL", example = "https://<bucket-name>.s3.amazonaws.com/<key>", hidden = true)

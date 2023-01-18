@@ -1,5 +1,6 @@
 package com.bithumbsystems.cms.api.model.response
 
+import com.bithumbsystems.cms.api.util.EncryptionUtil.decryptAES
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsPressRelease
 import com.bithumbsystems.cms.persistence.redis.entity.RedisBoard
 import io.swagger.v3.oas.annotations.media.Schema
@@ -67,7 +68,7 @@ fun PressReleaseDetailResponse.toRedisEntity(): RedisBoard = RedisBoard(
  * CmsPressRelease Entity를 PressReleaseDetailResponse 변환한다.
  * @return 마스킹 처리되지 않은 응답
  */
-fun CmsPressRelease.toResponse(): PressReleaseDetailResponse = PressReleaseDetailResponse(
+fun CmsPressRelease.toResponse(password: String): PressReleaseDetailResponse = PressReleaseDetailResponse(
     id = id,
     title = title,
     content = content,
@@ -87,9 +88,9 @@ fun CmsPressRelease.toResponse(): PressReleaseDetailResponse = PressReleaseDetai
     isAlignTop = isAlignTop,
     screenDate = screenDate,
     createAccountId = createAccountId,
-    createAccountEmail = createAccountEmail,
+    createAccountEmail = createAccountEmail.decryptAES(password),
     createDate = createDate,
     updateAccountId = updateAccountId,
-    updateAccountEmail = updateAccountEmail,
+    updateAccountEmail = updateAccountEmail?.decryptAES(password),
     updateDate = updateDate
 )

@@ -1,7 +1,8 @@
 package com.bithumbsystems.cms.api.model.response
 
 import com.bithumbsystems.cms.api.model.aggregate.Category
-import com.bithumbsystems.cms.api.util.MaskingUtil.getEmailMask
+import com.bithumbsystems.cms.api.util.EncryptionUtil.decryptAES
+import com.bithumbsystems.cms.api.util.MaskingUtil.toEmailMask
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsNotice
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
@@ -38,7 +39,7 @@ class NoticeResponse(
  * CmsNotice Entity를 NoticeCategoryDetailResponse 변환한다.
  * @return 마스킹 처리된 응답
  */
-fun CmsNotice.toMaskingResponse() = NoticeResponse(
+fun CmsNotice.toMaskingResponse(password: String) = NoticeResponse(
     id = id,
     categoryNames = categoryNames,
     title = title,
@@ -48,7 +49,7 @@ fun CmsNotice.toMaskingResponse() = NoticeResponse(
     isDraft = isDraft,
     readCount = readCount,
     screenDate = screenDate,
-    createAccountEmail = createAccountEmail.getEmailMask(),
+    createAccountEmail = createAccountEmail.decryptAES(password).toEmailMask(),
     createDate = createDate,
     updateDate = updateDate
 )

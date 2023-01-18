@@ -22,7 +22,7 @@ class RedisRepository(
 
     companion object {
         private const val WAIT_TIME = 1000L
-        private const val LEASE_TIME = 3000L
+        private const val LEASE_TIME = 1500L
     }
 
     /**

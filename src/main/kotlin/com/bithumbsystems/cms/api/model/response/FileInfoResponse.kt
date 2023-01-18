@@ -1,7 +1,8 @@
 package com.bithumbsystems.cms.api.model.response
 
 import com.bithumbsystems.cms.api.model.enums.FileExtensionType
-import com.bithumbsystems.cms.api.util.MaskingUtil.getEmailMask
+import com.bithumbsystems.cms.api.util.EncryptionUtil.decryptAES
+import com.bithumbsystems.cms.api.util.MaskingUtil.toEmailMask
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsFileInfo
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
@@ -28,12 +29,12 @@ class FileInfoResponse(
  * CmsFileInfo Entity를 FileInfoResponse로 변환한다.
  * @return FileInfoResponse
  */
-fun CmsFileInfo.toResponse(): FileInfoResponse = FileInfoResponse(
+fun CmsFileInfo.toResponse(password: String): FileInfoResponse = FileInfoResponse(
     id = id,
     name = name,
     size = size,
     extension = extension,
     createAccountId = createAccountId,
-    createAccountEmail = createAccountEmail.getEmailMask(),
+    createAccountEmail = createAccountEmail.decryptAES(password).toEmailMask(),
     createDate = createDate
 )

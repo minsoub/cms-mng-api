@@ -2,6 +2,7 @@ package com.bithumbsystems.cms.api.model.request
 
 import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.model.enums.FileExtensionType
+import com.bithumbsystems.cms.api.util.EncryptionUtil.encryptAES
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsFileInfo
 import io.swagger.v3.oas.annotations.media.Schema
 
@@ -23,9 +24,9 @@ class FileInfoRequest(
     var createAccountEmail: String = ""
 }
 
-fun FileInfoRequest.setCreateInfo(account: Account) = apply {
+fun FileInfoRequest.setCreateInfo(password: String, saltKey: String, ivKey: String, account: Account): FileInfoRequest = apply {
     this.createAccountId = account.accountId
-    this.createAccountEmail = account.email
+    this.createAccountEmail = account.email.encryptAES(password = password, saltKey = saltKey, ivKey = ivKey)
 }
 
 fun FileInfoRequest.toEntity() = CmsFileInfo(

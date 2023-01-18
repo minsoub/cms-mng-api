@@ -16,7 +16,7 @@ spring:
             port: 27017
             username: cms-systems
             database: smartcmslocaldb
-            password:
+            password: cms-systems
     redis:
         host: localhost
         port: 6379
@@ -88,3 +88,25 @@ spring:
         import: classpath:aws-properties-eks-dev.yml
         activate:
             on-profile: eks-dev
+
+---
+spring:
+    config:
+        import: classpath:aws-properties-perform.yml
+        activate:
+            on-profile: perform
+
+---
+spring:
+    config:
+        import: classpath:aws-properties-qa.yml
+        activate:
+            on-profile: qa
+
+---
+spring:
+    config:
+        import: classpath:aws-properties-prod.yml
+        activate:
+            on-profile: prod
+

@@ -1,6 +1,8 @@
 package com.bithumbsystems.cms.api.model.request
 
+import com.bithumbsystems.cms.api.exception.ValidationException
 import com.bithumbsystems.cms.api.model.constants.ShareConstants.EVENT_TITLE
+import com.bithumbsystems.cms.api.model.enums.ErrorCode
 import com.bithumbsystems.cms.api.model.enums.EventTarget
 import com.bithumbsystems.cms.api.model.enums.EventType
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsEvent
@@ -34,7 +36,10 @@ class EventRequest(
     @field:Future
     var eventEndDate: LocalDateTime? = null
 
-    @Schema(description = "개인정보 수집 및 이용 동의 문구", example = "개인정보 수집 및 이용 동의 문구")
+    @Schema(description = "개인정보 수집 및 이용 동의 문구 제목", example = "개인정보 수집 및 이용 동의 문구")
+    var agreementTitle: String? = null
+
+    @Schema(description = "개인정보 수집 및 이용 동의 문구 본문", example = "개인정보 수집 및 이용 동의 문구")
     var agreementContent: String? = null
 
     @Schema(description = "버튼명", example = "버튼명", maxLength = 10)
@@ -51,10 +56,6 @@ class EventRequest(
     @Schema(description = "메시지")
     @field:Valid
     var message: Message? = null
-
-    internal val isValid = eventStartDate?.isBefore(LocalDateTime.now()) == true || eventEndDate?.isBefore(LocalDateTime.now()) == true ||
-        (buttonName?.length ?: 0) > 10 || (buttonColor?.length ?: 0) > 10 || (message?.participateMessage?.length ?: 0) > 20 ||
-        (message?.duplicateMessage?.length ?: 0) > 20
 }
 
 @Schema(description = "이벤트 메시지")
@@ -91,6 +92,7 @@ fun EventRequest.toEntity(): CmsEvent {
     entity.target = target
     entity.eventStartDate = eventStartDate
     entity.eventEndDate = eventEndDate
+    entity.agreementTitle = agreementTitle
     entity.agreementContent = agreementContent
     entity.buttonName = buttonName
     entity.buttonColor = buttonColor
@@ -107,13 +109,19 @@ fun EventRequest.toEntity(): CmsEvent {
 }
 
 fun EventRequest.validateEvent(): Boolean {
-    return when {
-        isValid -> {
-            false
-        }
+    when {
+        eventStartDate?.isBefore(LocalDateTime.now()) == true || eventEndDate?.isBefore(LocalDateTime.now()) == true ->
+            ErrorCode.INVALID_EVENT_DATE.message
 
-        else -> {
-            true
-        }
+        (buttonName?.length ?: 0) > 10 -> ErrorCode.INVALID_BUTTON_NAME_LENGTH.message
+
+        (buttonColor?.length ?: 0) > 10 -> ErrorCode.INVALID_BUTTON_COLOR_LENGTH.message
+
+        (message?.participateMessage?.length ?: 0) > 20 || (message?.duplicateMessage?.length ?: 0) > 20 -> ErrorCode.INVALID_MESSAGE_LENGTH.message
+
+        else -> null
+    }?.let {
+        throw ValidationException(it)
     }
+    return true
 }

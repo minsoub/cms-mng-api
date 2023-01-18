@@ -8,7 +8,7 @@ object MaskingUtil {
      * 이메일 주소는 아이디의 앞 3자리 및 @ 이후를 제외한 문자, 숫자 표시 제한(abc****@abc.com, abc@abc.com)
      * @return 마스킹 처리된 이메일
      */
-    fun String.getEmailMask(): String =
+    fun String.toEmailMask(): String =
         if (StringUtils.hasLength(this)) {
             this.replace(Regex("(?<=.{3}).(?=.*@)"), "*")
         } else {
@@ -20,7 +20,7 @@ object MaskingUtil {
      * 성을 제외한 이름의 첫 번째 자리 표시 제한(ex : 홍*동, 남궁*분, 고*)
      * @return 마스킹 처리된 이름
      */
-    fun String.getNameMask(): String =
+    fun String.toNameMask(): String =
         if (StringUtils.hasLength(this)) {
             // 이름이 외자 또는 4자 이상인 경우 분기
             val middleMask: String = if (this.length > 2) {

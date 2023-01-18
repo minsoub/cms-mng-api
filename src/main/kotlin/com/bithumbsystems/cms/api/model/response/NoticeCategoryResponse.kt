@@ -1,6 +1,7 @@
 package com.bithumbsystems.cms.api.model.response
 
-import com.bithumbsystems.cms.api.util.MaskingUtil.getEmailMask
+import com.bithumbsystems.cms.api.util.EncryptionUtil.decryptAES
+import com.bithumbsystems.cms.api.util.MaskingUtil.toEmailMask
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsNoticeCategory
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
@@ -37,13 +38,13 @@ data class CategoryResponse(
  * CmsNoticeCategory Entity를 NoticeCategoryResponse로 변환한다.
  * @return 마스킹 처리된 응답
  */
-fun CmsNoticeCategory.toMaskingResponse(): NoticeCategoryResponse = NoticeCategoryResponse(
+fun CmsNoticeCategory.toMaskingResponse(password: String): NoticeCategoryResponse = NoticeCategoryResponse(
     id = id,
     name = name,
     isUse = isUse,
-    createAccountEmail = createAccountEmail.getEmailMask(),
+    createAccountEmail = createAccountEmail.decryptAES(password).toEmailMask(),
     createDate = createDate,
-    updateAccountEmail = updateAccountEmail?.getEmailMask(),
+    updateAccountEmail = updateAccountEmail?.decryptAES(password)?.toEmailMask(),
     updateDate = updateDate
 )
 

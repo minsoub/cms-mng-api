@@ -39,9 +39,8 @@ internal class QueryUtilTest {
 
         searchParamsPage.buildCriteria(isFixTop = null, isDelete = null) `should be equal to` Criteria()
         (searchParamsPageDBList[0] as Document)["is_fix_top"] `should be` (true)
-        (searchParamsQueryDBList[0] as Document)["title"].toString() `should be equal to` ".*1.*"
-        (searchParamsQueryDBList[1] as Document)["content"].toString() `should be equal to` ".*1.*"
-        (searchParamsQueryDBList[2] as Document)["name"].toString() `should be equal to` ".*1.*"
+        (searchParamsQueryDBList[0] as Document)["search_content"].toString() `should be equal to` ".*1.*"
+        (searchParamsQueryDBList[1] as Document)["name"].toString() `should be equal to` ".*1.*"
         ((searchParamsCategoryDBList[0] as Document)["category_ids"] as Document)["\$in"].toString() `should be equal to` "[abcdef]"
         (searchParamsIsBannerDBList[0] as Document)["is_banner"] `should be` (true)
         (searchParamsIsShowDBList[0] as Document)["is_show"] `should be` (true)

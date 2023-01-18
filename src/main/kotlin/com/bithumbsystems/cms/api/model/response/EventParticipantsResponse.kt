@@ -1,5 +1,6 @@
 package com.bithumbsystems.cms.api.model.response
 
+import com.bithumbsystems.cms.api.util.EncryptionUtil.decryptAES
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsEventParticipants
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
@@ -23,12 +24,12 @@ class EventParticipantsResponse(
 )
 
 /**
- * CmsEvent Entity를 EventResponse 변환한다.
- * @return 마스킹 처리된 응답
+ * CmsEvent Entity를 EventParticipantsResponse로 변환한다.
+ * @return EventParticipantsResponse
  */
-fun CmsEventParticipants.toResponse(): EventParticipantsResponse = EventParticipantsResponse(
+fun CmsEventParticipants.toResponse(password: String): EventParticipantsResponse = EventParticipantsResponse(
     eventId = eventId,
-    uid = uid,
+    uid = uid.decryptAES(password),
     isAgree = isAgree,
     createDate = createDate,
     eventEndDate = eventEndDate

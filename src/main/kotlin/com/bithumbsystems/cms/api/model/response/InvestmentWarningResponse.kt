@@ -1,6 +1,7 @@
 package com.bithumbsystems.cms.api.model.response
 
-import com.bithumbsystems.cms.api.util.MaskingUtil.getEmailMask
+import com.bithumbsystems.cms.api.util.EncryptionUtil.decryptAES
+import com.bithumbsystems.cms.api.util.MaskingUtil.toEmailMask
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsInvestmentWarning
 import io.swagger.v3.oas.annotations.media.Schema
 import java.time.LocalDateTime
@@ -33,7 +34,7 @@ class InvestmentWarningResponse(
  * CmsInvestmentWarning Entity를 InvestmentWarningResponse 변환한다.
  * @return 마스킹 처리된 응답
  */
-fun CmsInvestmentWarning.toMaskingResponse(): InvestmentWarningResponse = InvestmentWarningResponse(
+fun CmsInvestmentWarning.toMaskingResponse(password: String): InvestmentWarningResponse = InvestmentWarningResponse(
     id = id,
     title = title,
     isFixTop = isFixTop,
@@ -41,7 +42,7 @@ fun CmsInvestmentWarning.toMaskingResponse(): InvestmentWarningResponse = Invest
     isDraft = isDraft,
     readCount = readCount,
     screenDate = screenDate,
-    createAccountEmail = createAccountEmail.getEmailMask(),
+    createAccountEmail = createAccountEmail.decryptAES(password).toEmailMask(),
     createDate = createDate,
     updateDate = updateDate
 )

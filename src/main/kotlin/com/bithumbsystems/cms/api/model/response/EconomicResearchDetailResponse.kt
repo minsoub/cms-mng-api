@@ -1,5 +1,6 @@
 package com.bithumbsystems.cms.api.model.response
 
+import com.bithumbsystems.cms.api.util.EncryptionUtil.decryptAES
 import com.bithumbsystems.cms.api.util.getS3Url
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsEconomicResearch
 import com.bithumbsystems.cms.persistence.redis.entity.RedisThumbnail
@@ -73,7 +74,7 @@ fun EconomicResearchDetailResponse.toRedisEntity(): RedisThumbnail = RedisThumbn
  * CmsEconomicResearch Entity를 EconomicResearchDetailResponse 변환한다.
  * @return 마스킹 처리되지 않은 응답
  */
-fun CmsEconomicResearch.toResponse(): EconomicResearchDetailResponse = EconomicResearchDetailResponse(
+fun CmsEconomicResearch.toResponse(password: String): EconomicResearchDetailResponse = EconomicResearchDetailResponse(
     id = id,
     title = title,
     content = content,
@@ -95,9 +96,9 @@ fun CmsEconomicResearch.toResponse(): EconomicResearchDetailResponse = EconomicR
     thumbnailFileId = thumbnailFileId,
     thumbnailUrl = thumbnailUrl,
     createAccountId = createAccountId,
-    createAccountEmail = createAccountEmail,
+    createAccountEmail = createAccountEmail.decryptAES(password),
     createDate = createDate,
     updateAccountId = updateAccountId,
-    updateAccountEmail = updateAccountEmail,
+    updateAccountEmail = updateAccountEmail?.decryptAES(password),
     updateDate = updateDate
 )

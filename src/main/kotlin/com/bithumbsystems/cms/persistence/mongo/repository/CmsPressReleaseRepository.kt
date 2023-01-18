@@ -8,5 +8,5 @@ import org.springframework.stereotype.Repository
 @Repository
 interface CmsPressReleaseRepository : CmsCommonRepository<CmsPressRelease> {
 
-    fun findByIsShowIsTrueAndIsDeleteIsFalseAndIsDraftIsFalseOrderByScreenDateDesc(pageable: Pageable): Flow<CmsPressRelease>
+    fun findByIsShowIsTrueAndIsDeleteIsFalseAndIsDraftIsFalseAndIsScheduleIsFalseOrderByScreenDateDesc(pageable: Pageable): Flow<CmsPressRelease>
 }

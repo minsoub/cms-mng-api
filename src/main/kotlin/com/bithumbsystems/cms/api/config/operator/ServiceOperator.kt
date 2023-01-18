@@ -1,5 +1,8 @@
 package com.bithumbsystems.cms.api.config.operator
 
+import com.bithumbsystems.cms.api.exception.CustomException
+import com.bithumbsystems.cms.api.exception.UploadFailedException
+import com.bithumbsystems.cms.api.exception.ValidationException
 import com.bithumbsystems.cms.api.model.enums.ErrorCode
 import com.bithumbsystems.cms.api.model.enums.ResponseCode
 import com.bithumbsystems.cms.api.model.response.ErrorData
@@ -13,6 +16,7 @@ import com.github.michaelbull.result.recover
 import kotlinx.coroutines.*
 import kotlinx.coroutines.reactor.ReactorContext
 import org.springframework.http.ResponseEntity
+import software.amazon.awssdk.services.s3.model.NoSuchKeyException
 import kotlin.coroutines.CoroutineContext
 import kotlin.coroutines.coroutineContext
 
@@ -39,26 +43,64 @@ object ServiceOperator {
                 code = errorCode,
                 message = errorCode.message
             )
-        } ?: when (throwable) {
-            is IllegalArgumentException ->
-                ErrorData(
-                    code = ErrorCode.ILLEGAL_ARGUMENT,
-                    message = ErrorCode.ILLEGAL_ARGUMENT.message
-                )
+        } ?: makeErrorData(throwable)
 
-            is IllegalStateException ->
-                ErrorData(
-                    code = ErrorCode.ILLEGAL_STATE,
-                    message = ErrorCode.ILLEGAL_STATE.message
-                )
+    fun errorHandler(throwable: Throwable): ErrorData =
+        makeErrorData(throwable)
 
-            else -> {
-                ErrorData(
-                    code = ErrorCode.UNKNOWN,
-                    message = ErrorCode.UNKNOWN.message
-                )
+    private fun makeErrorData(throwable: Throwable): ErrorData = when (throwable) {
+        is IllegalArgumentException ->
+            ErrorData(
+                code = ErrorCode.ILLEGAL_ARGUMENT,
+                message = ErrorCode.ILLEGAL_ARGUMENT.message
+            )
+
+        is IllegalStateException ->
+            ErrorData(
+                code = ErrorCode.ILLEGAL_STATE,
+                message = ErrorCode.ILLEGAL_STATE.message
+            )
+
+        is UploadFailedException ->
+            ErrorData(
+                code = ErrorCode.UPLOAD_FAIL,
+                message = ErrorCode.UPLOAD_FAIL.message
+            )
+
+        is ValidationException ->
+            when (throwable.code) {
+                ErrorCode.DUPLICATE_SCHEDULE_DATE ->
+                    ErrorData(
+                        code = throwable.code,
+                        message = throwable.message
+                    )
+
+                else ->
+                    ErrorData(
+                        code = ErrorCode.ILLEGAL_ARGUMENT,
+                        message = throwable.message
+                    )
             }
+
+        is NoSuchKeyException ->
+            ErrorData(
+                code = ErrorCode.NOT_FOUND,
+                message = ErrorCode.NOT_FOUND.message
+            )
+
+        is CustomException ->
+            ErrorData(
+                code = throwable.code,
+                message = throwable.message
+            )
+
+        else -> {
+            ErrorData(
+                code = ErrorCode.UNKNOWN,
+                message = ErrorCode.UNKNOWN.message
+            )
         }
+    }
 
     suspend fun <T> execute(
         block: suspend () -> Result<T?, ErrorData>
@@ -82,7 +124,7 @@ object ServiceOperator {
         action()
     }.mapError {
         logger.error(it.message, it)
-        errorHandler(it)
+        errorHandler(throwable = it)
     }
 
     suspend fun <T> executeIn(
@@ -91,7 +133,7 @@ object ServiceOperator {
         action()
     }.mapError {
         logger.error(it.message, it)
-        errorHandler(it)
+        errorHandler(throwable = it)
     }
 
     suspend fun <T> executeIn(
@@ -103,7 +145,21 @@ object ServiceOperator {
         }
     }.mapError {
         logger.error(it.message, it)
-        errorHandler(it)
+        errorHandler(throwable = it)
+    }
+
+    suspend fun <T> executeIn(
+        validator: suspend () -> Boolean,
+        dispatcher: CoroutineDispatcher,
+        action: suspend () -> T?
+    ): Result<T?, ErrorData> = runSuspendCatching {
+        withContext(dispatcher) {
+            require(validator())
+            action()
+        }
+    }.mapError {
+        logger.error(it.message, it)
+        errorHandler(throwable = it)
     }
 
     suspend fun <T> executeIn(
@@ -124,6 +180,6 @@ object ServiceOperator {
         }
         result
     }.mapError {
-        errorHandler(it)
+        errorHandler(throwable = it)
     }
 }

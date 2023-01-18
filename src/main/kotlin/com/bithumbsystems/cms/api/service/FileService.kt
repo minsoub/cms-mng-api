@@ -21,6 +21,8 @@ import org.springframework.http.codec.multipart.FilePart
 import org.springframework.stereotype.Service
 import reactor.core.publisher.Mono
 import software.amazon.awssdk.services.s3.S3AsyncClient
+import java.net.URLEncoder
+import java.util.*
 
 @Service
 class FileService(
@@ -28,60 +30,51 @@ class FileService(
     private val awsProperties: AwsProperties,
     private val s3AsyncClient: S3AsyncClient,
     private val fileInfoRepository: CmsFileInfoRepository,
-) {
+) : CmsBaseService() {
 
-    private val logger by Logger()
-
-    suspend fun upload(file: FilePart) = executeIn(dispatcher = ioDispatcher, action = { file.upload(s3AsyncClient, awsProperties.bucket) })
-
-    suspend fun upload(fileKey: String, file: FilePart) =
+    suspend fun upload(fileKey: String, file: FilePart): Result<String?, ErrorData> =
         executeIn(dispatcher = ioDispatcher, action = { file.upload(fileKey, s3AsyncClient, awsProperties.bucket) })
 
-    suspend fun addFileInfo(file: FilePart, account: Account, fileSize: Long?): Result<FileInfoResponse?, ErrorData> =
-        executeIn(dispatcher = ioDispatcher, action = {
-            upload(file).component1()?.let {
-                fileInfoRepository.save(fileInfoRequest(it, file, fileSize, account).toEntity()).toResponse()
-            }
-        })
+    suspend fun addFileInfo(file: FilePart, account: Account): Result<FileInfoResponse?, ErrorData> =
+        addFileInfo(fileKey = UUID.randomUUID().toString().replace("-", ""), file = file, account = account)
 
     private suspend fun fileInfoRequest(
-        it: String,
+        id: String,
         file: FilePart,
-        fileSize: Long?,
         account: Account
     ): FileInfoRequest {
         val fileInfoRequest = FileInfoRequest(
-            id = it,
+            id = id,
             name = file.filename().getFileName(),
-            size = fileSize ?: file.content().count().awaitSingle(),
+            size = file.content().count().awaitSingle(),
             extension = file.filename().getFileExtensionType()
         )
-        fileInfoRequest.setCreateInfo(account)
+        fileInfoRequest.setCreateInfo(
+            password = awsProperties.kmsKey,
+            saltKey = awsProperties.saltKey,
+            ivKey = awsProperties.ivKey,
+            account = account
+        )
         return fileInfoRequest
     }
 
-    suspend fun addImageFileInfo(file: FilePart, account: Account, fileSize: Long?): ImageFileInfoResponse? = coroutineScope {
-        upload(file).component1()?.let {
-            fileInfoRepository.save(fileInfoRequest(it, file, fileSize, account).toEntity()).toImageResponse()
+    suspend fun addImageFileInfo(file: FilePart, account: Account): ImageFileInfoResponse? = coroutineScope {
+        val fileKey: String = UUID.randomUUID().toString().replace("-", "")
+        launch {
+            upload(fileKey, file)
         }
+
+        fileInfoRepository.save(fileInfoRequest(id = fileKey, file = file, account = account).toEntity()).toImageResponse()
     }
 
-    suspend fun addFileInfo(fileKey: String, file: FilePart, account: Account, fileSize: Long?): Result<FileInfoResponse?, ErrorData> =
-        executeIn(dispatcher = ioDispatcher, action = {
+    suspend fun addFileInfo(fileKey: String, file: FilePart, account: Account): Result<FileInfoResponse?, ErrorData> =
+        executeIn(dispatcher = ioDispatcher, validator = { file.validate() }, action = {
             coroutineScope {
                 launch {
                     upload(fileKey, file)
                 }
 
-                FileInfoRequest(
-                    id = fileKey,
-                    name = file.filename().getFileName(),
-                    size = fileSize ?: file.content().count().awaitSingle(),
-                    extension = file.filename().getFileExtensionType()
-                ).run {
-                    this.setCreateInfo(account)
-                    fileInfoRepository.save(this.toEntity()).toResponse()
-                }
+                fileInfoRepository.save(fileInfoRequest(id = fileKey, file = file, account = account).toEntity()).toResponse(awsProperties.kmsKey)
             }
         })
 
@@ -94,7 +87,7 @@ class FileService(
                 launch {
                     it.file?.let { file ->
                         it.fileKey?.let { fileKey ->
-                            addFileInfo(fileKey = fileKey, file = file, account = account, fileSize = null)
+                            addFileInfo(fileKey = fileKey, file = file, account = account)
                         }
                     }
                 }
@@ -102,7 +95,7 @@ class FileService(
                 launch {
                     it.shareFile?.let { shareFile ->
                         it.shareFileKey?.let { shareFileKey ->
-                            addFileInfo(fileKey = shareFileKey, file = shareFile, account = account, fileSize = null)
+                            addFileInfo(fileKey = shareFileKey, file = shareFile, account = account)
                         }
                     }
                 }
@@ -110,7 +103,7 @@ class FileService(
                 launch {
                     it.thumbnailFile?.let { thumbnailFile ->
                         it.thumbnailFileKey?.let { thumbnailFileKey ->
-                            addFileInfo(fileKey = thumbnailFileKey, file = thumbnailFile, account = account, fileSize = null)
+                            addFileInfo(fileKey = thumbnailFileKey, file = thumbnailFile, account = account)
                         }
                     }
                 }
@@ -119,14 +112,14 @@ class FileService(
     })
 
     suspend fun getFileInfo(id: String): Result<FileInfoResponse?, ErrorData> = executeIn {
-        fileInfoRepository.findById(id)?.toResponse()
+        fileInfoRepository.findById(id)?.toResponse(awsProperties.kmsKey)
     }
 
     fun download(fileKey: String): Mono<FileResult> = mono {
         logger.info("download fileKey: $fileKey")
-        val fileInfo: FileInfoResponse? = fileInfoRepository.findById(fileKey)?.toResponse()
+        val fileInfo: FileInfoResponse? = fileInfoRepository.findById(fileKey)?.toResponse(awsProperties.kmsKey)
         FileResult(
-            fileName = fileInfo?.name.plus(".".plus(fileInfo?.extension?.name?.lowercase())),
+            fileName = URLEncoder.encode(fileInfo?.name.plus(".".plus(fileInfo?.extension?.name?.lowercase())), Charsets.UTF_8),
             result = fileKey.download(s3AsyncClient = s3AsyncClient, bucket = awsProperties.bucket).awaitSingle()
         )
     }

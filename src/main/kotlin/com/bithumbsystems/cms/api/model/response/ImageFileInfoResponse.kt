@@ -9,7 +9,7 @@ import io.swagger.v3.oas.annotations.media.Schema
 class ImageFileInfoResponse(
     @Schema(description = "아이디", example = "https://<bucket-name>.s3.amazonaws.com/<key>")
     @JsonProperty("uploadPath")
-    val uploadPath: String,
+    val uploadPath: String
 )
 
 /**

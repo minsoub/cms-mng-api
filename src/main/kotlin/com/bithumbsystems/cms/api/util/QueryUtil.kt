@@ -9,7 +9,6 @@ import org.springframework.data.domain.Sort
 import org.springframework.data.domain.Sort.Direction
 import org.springframework.data.mongodb.core.aggregation.Aggregation
 import org.springframework.data.mongodb.core.aggregation.AggregationOperation
-import org.springframework.data.mongodb.core.aggregation.LookupOperation
 import org.springframework.data.mongodb.core.aggregation.MatchOperation
 import org.springframework.data.mongodb.core.query.Criteria
 import org.springframework.data.mongodb.core.query.Query
@@ -55,8 +54,7 @@ object QueryUtil {
         var criteriaList = orCriteriaList
         query?.let {
             criteriaList = listOf(
-                Criteria.where("title").regex(makeRegex(query!!)),
-                Criteria.where("content").regex(makeRegex(query!!)),
+                Criteria.where("search_content").regex(makeRegex(query!!)),
                 Criteria.where("name").regex(makeRegex(query!!))
             )
         }
@@ -78,12 +76,12 @@ object QueryUtil {
         }
 
         eventType?.let {
-            andCriteriaList.add(Criteria.where("event_type").`is`(eventType))
+            andCriteriaList.add(Criteria.where("type").`is`(eventType))
         }
 
         letIfAllNotNull(startDate, endDate) {
             andCriteriaList.add(Criteria.where("create_date").gte(startDate!!.atTime(0, 0, 0, 0)))
-            andCriteriaList.add(Criteria.where("create_date").lte(endDate!!.atTime(23, 59, 59, 999)))
+            andCriteriaList.add(Criteria.where("create_date").lte(endDate!!.atTime(23, 59, 59, 999_999_999)))
         }
 
         isFixTop?.let {
@@ -142,26 +140,24 @@ object QueryUtil {
         }
     }
 
-    fun buildFixAggregation(lookUpOperation: LookupOperation?): Aggregation {
+    fun buildFixAggregation(lookUpOperation: AggregationOperation?): Aggregation {
         val matchOperation: MatchOperation = Aggregation.match(
-            Criteria.where("is_fix_top").`is`(true).andOperator(Criteria.where("is_delete").`is`(false))
+            Criteria.where("is_fix_top").`is`(true).and("is_delete").`is`(false).and("is_show").`is`(true)
+                .and("is_draft").`is`(false)
         )
         return if (lookUpOperation == null) {
             Aggregation.newAggregation(
-                matchOperation,
-                Aggregation.sort(buildSort())
+                matchOperation, Aggregation.sort(buildSort())
             )
         } else {
             Aggregation.newAggregation(
-                lookUpOperation,
-                matchOperation,
-                Aggregation.sort(buildSort())
+                lookUpOperation, matchOperation, Aggregation.sort(buildSort())
             )
         }
     }
 
-    fun buildAggregation(lookUpOperation: LookupOperation, criteria: Criteria, pageable: Pageable, sort: Sort?): Aggregation {
-        val aggregation: MutableList<AggregationOperation> = mutableListOf(lookUpOperation, Aggregation.match(criteria))
+    fun buildAggregation(aggregationOperation: AggregationOperation, criteria: Criteria, pageable: Pageable, sort: Sort?): Aggregation {
+        val aggregation: MutableList<AggregationOperation> = mutableListOf(aggregationOperation, Aggregation.match(criteria))
         sort?.let {
             aggregation.add(Aggregation.sort(it))
         }

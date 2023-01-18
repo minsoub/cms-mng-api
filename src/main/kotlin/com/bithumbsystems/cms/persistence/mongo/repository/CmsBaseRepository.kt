@@ -7,8 +7,6 @@ import org.springframework.data.mongodb.core.query.Criteria
 
 interface CmsBaseRepository<T> {
 
-    suspend fun countByCriteria(criteria: Criteria): Long
-
     fun findByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<T>
 
     fun getFixItems(): Flow<T>

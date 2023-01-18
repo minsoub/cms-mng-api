@@ -4,6 +4,7 @@ import com.bithumbsystems.cms.api.config.resolver.Account
 import com.bithumbsystems.cms.api.model.constants.ShareConstants.ECONOMIC_RESEARCH_TITLE
 import com.bithumbsystems.cms.api.model.request.EconomicResearchRequest
 import com.bithumbsystems.cms.api.model.request.FileRequest
+import com.bithumbsystems.cms.api.util.EncryptionUtil.encryptAES
 import com.bithumbsystems.cms.persistence.redis.entity.RedisThumbnail
 import org.springframework.data.mongodb.core.mapping.Document
 import org.springframework.data.mongodb.core.mapping.MongoId
@@ -20,6 +21,7 @@ class CmsEconomicResearch(
     val createAccountEmail: String,
     var createDate: LocalDateTime = LocalDateTime.now()
 ) {
+    var searchContent: String? = "${title.trim()} | ${content.replace("&nbsp;", "").replace("<[^>]*>".toRegex(), "")}"
     var isFixTop: Boolean = false
     var isShow: Boolean = false
     var isDelete: Boolean = false
@@ -42,18 +44,33 @@ class CmsEconomicResearch(
     var thumbnailUrl: String? = null
 }
 
-fun CmsEconomicResearch.setUpdateInfo(account: Account) {
+fun CmsEconomicResearch.setUpdateInfo(password: String, saltKey: String, ivKey: String, account: Account) {
+    isShow = when (isSchedule) {
+        true -> false
+        false -> isShow
+    }
     updateAccountId = account.accountId
-    updateAccountEmail = account.email
+    updateAccountEmail = account.email.encryptAES(password = password, saltKey = saltKey, ivKey = ivKey)
     updateDate = LocalDateTime.now()
 }
 
-fun CmsEconomicResearch.setUpdateInfo(request: EconomicResearchRequest, account: Account, fileRequest: FileRequest?) {
+fun CmsEconomicResearch.setUpdateInfo(
+    password: String,
+    saltKey: String,
+    ivKey: String,
+    request: EconomicResearchRequest,
+    account: Account,
+    fileRequest: FileRequest?
+) {
     title = request.title
     isFixTop = request.isFixTop
-    isShow = request.isShow
+    isShow = when (isSchedule) {
+        true -> false
+        false -> request.isShow
+    }
     isDelete = request.isDelete
     content = request.content
+    searchContent = "${title.trim()} | ${content.replace("&nbsp;", "").replace("<[^>]*>".toRegex(), "")}"
     fileId = fileRequest?.fileKey ?: request.fileId
     shareTitle = request.shareTitle ?: title
     shareDescription = request.shareDescription
@@ -61,10 +78,12 @@ fun CmsEconomicResearch.setUpdateInfo(request: EconomicResearchRequest, account:
     shareButtonName = request.shareButtonName ?: ECONOMIC_RESEARCH_TITLE
     isSchedule = request.isSchedule
     scheduleDate = request.scheduleDate
-    isDraft = request.isDraft
-    readCount = request.readCount
+    isDraft = when {
+        isDraft && !request.isDraft -> false
+        else -> isDraft
+    }
     updateAccountId = account.accountId
-    updateAccountEmail = account.email
+    updateAccountEmail = account.email.encryptAES(password = password, saltKey = saltKey, ivKey = ivKey)
     updateDate = LocalDateTime.now()
     isUseUpdateDate = request.isUseUpdateDate
     isAlignTop = request.isAlignTop

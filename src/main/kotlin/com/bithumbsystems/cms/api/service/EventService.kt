@@ -5,11 +5,12 @@ import com.amazonaws.services.sqs.model.SendMessageRequest
 import com.bithumbsystems.cms.api.config.aws.AwsProperties
 import com.bithumbsystems.cms.api.config.operator.ServiceOperator.executeIn
 import com.bithumbsystems.cms.api.config.resolver.Account
+import com.bithumbsystems.cms.api.exception.CustomException
 import com.bithumbsystems.cms.api.model.enums.ActionType
+import com.bithumbsystems.cms.api.model.enums.ErrorCode
 import com.bithumbsystems.cms.api.model.enums.RedisKeys.CMS_EVENT_FIX
 import com.bithumbsystems.cms.api.model.request.*
 import com.bithumbsystems.cms.api.model.response.*
-import com.bithumbsystems.cms.api.util.Logger
 import com.bithumbsystems.cms.api.util.QueryUtil.buildCriteria
 import com.bithumbsystems.cms.api.util.QueryUtil.buildCriteriaForDraft
 import com.bithumbsystems.cms.api.util.QueryUtil.buildSort
@@ -57,8 +58,7 @@ class EventService(
     private val amazonSQS: AmazonSQSAsync,
     private val awsProperties: AwsProperties,
     private val webClient: WebClient,
-) {
-    private val logger by Logger()
+) : CmsBaseService() {
 
     /**
      * 이벤트 생성
@@ -73,7 +73,10 @@ class EventService(
         account: Account
     ): Result<EventDetailResponse?, ErrorData> = executeIn(
         validator = {
-            request.validate() && request.validateEvent() && fileRequest?.validate() == true
+            request.validate() && request.validateEvent() && fileRequest?.validate() ?: true && validateScheduleDate(
+                request = request,
+                repository = eventRepository
+            )
         },
         action = {
             coroutineScope {
@@ -82,11 +85,22 @@ class EventService(
                         launch {
                             fileService.addFileInfo(fileRequest = fileRequest, account = account)
                         }
-                        request.setCreateInfo(fileRequest = fileRequest, account = account)
+                        request.setCreateInfo(
+                            password = awsProperties.kmsKey,
+                            saltKey = awsProperties.saltKey,
+                            ivKey = awsProperties.ivKey,
+                            fileRequest = fileRequest,
+                            account = account
+                        )
                     }
-                } ?: request.setCreateInfo(account)
+                } ?: request.setCreateInfo(
+                    password = awsProperties.kmsKey,
+                    saltKey = awsProperties.saltKey,
+                    ivKey = awsProperties.ivKey,
+                    account = account
+                )
 
-                eventRepository.save(request.toEntity()).toResponse().also {
+                eventRepository.save(request.toEntity()).toResponse(awsProperties.kmsKey).also {
                     if (it.isFixTop) {
                         applyToRedis()
                     }
@@ -94,16 +108,6 @@ class EventService(
             }
         }
     )
-
-    private suspend fun applyToRedis() {
-        eventRepository.getFixItems().map { item -> item.toRedisEntity() }.toList().also { totalList ->
-            redisRepository.addOrUpdateRBucket(
-                bucketKey = CMS_EVENT_FIX,
-                value = totalList,
-                typeReference = object : TypeReference<List<RedisBoard>>() {}
-            )
-        }
-    }
 
     suspend fun getEvents(searchParams: SearchParams, account: Account): Result<ListResponse<EventResponse>?, ErrorData> = executeIn {
         coroutineScope {
@@ -126,14 +130,14 @@ class EventService(
                     pageable = Pageable.unpaged(),
                     sort = defaultSort
                 )
-                    .map { it.toMaskingResponse() }
+                    .map { it.toMaskingResponse(awsProperties.kmsKey) }
                     .toList()
             }
 
             val top: Deferred<List<EventResponse>> = async {
                 criteria = searchParams.buildCriteria(isFixTop = true, isDelete = false)
                 eventRepository.findByCriteria(criteria = criteria, pageable = Pageable.unpaged(), sort = defaultSort)
-                    .map { it.toMaskingResponse() }
+                    .map { it.toMaskingResponse(awsProperties.kmsKey) }
                     .toList()
             }
 
@@ -145,7 +149,7 @@ class EventService(
     }
 
     suspend fun getEvent(id: String): Result<EventDetailResponse?, ErrorData> = executeIn {
-        eventRepository.findById(id)?.toResponse()
+        eventRepository.findById(id)?.toResponse(awsProperties.kmsKey)
     }
 
     @Transactional
@@ -156,7 +160,10 @@ class EventService(
         account: Account
     ): Result<EventDetailResponse?, ErrorData> = executeIn(
         validator = {
-            request.validate() && request.validateEvent() && fileRequest?.validate() == true
+            request.validate() && request.validateEvent() && fileRequest?.validate() ?: true && validateScheduleDate(
+                request = request,
+                repository = eventRepository
+            )
         },
         action = {
             coroutineScope {
@@ -169,9 +176,18 @@ class EventService(
                 }
 
                 eventRepository.findById(id)?.let {
-                    val isChange: Boolean = it.isFixTop != request.isFixTop
-                    it.setUpdateInfo(request = request, account = account, fileRequest = fileRequest)
-                    eventRepository.save(it).toResponse().also {
+                    val isChange: Boolean =
+                        it.isFixTop != request.isFixTop || it.isDelete != request.isDelete || it.isShow != request.isShow ||
+                            it.isSchedule != request.isSchedule || it.title != request.title
+                    it.setUpdateInfo(
+                        password = awsProperties.kmsKey,
+                        saltKey = awsProperties.saltKey,
+                        ivKey = awsProperties.ivKey,
+                        request = request,
+                        account = account,
+                        fileRequest = fileRequest
+                    )
+                    eventRepository.save(it).toResponse(awsProperties.kmsKey).also {
                         if (isChange) {
                             applyToRedis()
                         }
@@ -185,11 +201,16 @@ class EventService(
     suspend fun deleteEvent(id: String, account: Account): Result<EventDetailResponse?, ErrorData> = executeIn {
         eventRepository.findById(id)?.let {
             when (it.isDelete) {
-                true -> it.toResponse()
+                true -> it.toResponse(awsProperties.kmsKey)
                 false -> {
                     it.isDelete = true
-                    it.setUpdateInfo(account)
-                    eventRepository.save(it).toResponse().also { response ->
+                    it.setUpdateInfo(
+                        password = awsProperties.kmsKey,
+                        saltKey = awsProperties.saltKey,
+                        ivKey = awsProperties.ivKey,
+                        account = account
+                    )
+                    eventRepository.save(it).toResponse(awsProperties.kmsKey).also { response ->
                         if (response.isFixTop) {
                             applyToRedis()
                         }
@@ -199,23 +220,14 @@ class EventService(
         }
     }
 
-    suspend fun decryptUid(uid: String): String {
-        webClient.post().uri("")
-            .contentType(APPLICATION_JSON)
-            .bodyValue(uid).accept(APPLICATION_JSON).retrieve().awaitBody<Any>()
-        webClient.get().uri("")
-            .accept(APPLICATION_JSON).retrieve().awaitBody<Any>()
-        return uid
-    } // todo
-
     fun downloadEventExcel(eventId: String, reason: String, account: Account): Mono<ByteArrayInputStream> =
         mono {
             val eventParticipants: List<EventParticipantsResponse> =
-                eventParticipantsRepository.findByEventId(eventId).map { it.toResponse() }.toList()
+                eventParticipantsRepository.findByEventId(eventId).map { it.toResponse(awsProperties.kmsKey) }.toList()
 
             eventParticipantsRepository.findByEventId(eventId).map {
                 it.uid = decryptUid(it.uid) // todo 복호화 처리
-                it.toResponse()
+                it.toResponse(awsProperties.kmsKey)
             }.toList()
 
             val description = "이벤트 참여자 엑셀 다운로드"
@@ -224,6 +236,23 @@ class EventService(
             sendReason(reason = reason, description = description, account = account)
             createExcelFile(eventParticipants).awaitSingleOrNull()
         }
+
+    private suspend fun decryptUid(uidToken: String): String {
+        val result: BithumbResponse<UidTokenResponse> =
+            webClient.get().uri { uriBuilder -> uriBuilder.path("/v1/meminfo/uid").queryParam("uidToken", uidToken).build() }
+                .accept(APPLICATION_JSON).retrieve().awaitBody()
+        return result.data?.uid ?: throw CustomException(ErrorCode.UID_DECRYPT_FAIL, ErrorCode.UID_DECRYPT_FAIL.message)
+    } // todo
+
+    private suspend fun applyToRedis() {
+        eventRepository.getFixItems().map { item -> item.toRedisEntity() }.toList().also { totalList ->
+            redisRepository.addOrUpdateRBucket(
+                bucketKey = CMS_EVENT_FIX,
+                value = totalList,
+                typeReference = object : TypeReference<List<RedisBoard>>() {}
+            )
+        }
+    }
 
     private fun sendReason(reason: String, description: String, account: Account) {
         val eventReasonRequest = EventReasonRequest(

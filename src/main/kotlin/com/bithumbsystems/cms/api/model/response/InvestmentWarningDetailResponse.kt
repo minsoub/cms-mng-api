@@ -1,5 +1,6 @@
 package com.bithumbsystems.cms.api.model.response
 
+import com.bithumbsystems.cms.api.util.EncryptionUtil.decryptAES
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsInvestmentWarning
 import com.bithumbsystems.cms.persistence.redis.entity.RedisBoard
 import io.swagger.v3.oas.annotations.media.Schema
@@ -67,7 +68,7 @@ fun InvestmentWarningDetailResponse.toRedisEntity(): RedisBoard = RedisBoard(
  * CmsReviewReport Entity를 ReviewReportDetailResponse 변환한다.
  * @return 마스킹 처리되지 않은 응답
  */
-fun CmsInvestmentWarning.toResponse(): InvestmentWarningDetailResponse = InvestmentWarningDetailResponse(
+fun CmsInvestmentWarning.toResponse(password: String): InvestmentWarningDetailResponse = InvestmentWarningDetailResponse(
     id = id,
     title = title,
     content = content,
@@ -87,9 +88,9 @@ fun CmsInvestmentWarning.toResponse(): InvestmentWarningDetailResponse = Investm
     isAlignTop = isAlignTop,
     screenDate = screenDate,
     createAccountId = createAccountId,
-    createAccountEmail = createAccountEmail,
+    createAccountEmail = createAccountEmail.decryptAES(password),
     createDate = createDate,
     updateAccountId = updateAccountId,
-    updateAccountEmail = updateAccountEmail,
+    updateAccountEmail = updateAccountEmail?.decryptAES(password),
     updateDate = updateDate
 )

@@ -6,20 +6,16 @@ import com.bithumbsystems.cms.persistence.mongo.entity.CmsPressRelease
 import com.bithumbsystems.cms.persistence.mongo.repository.CmsBaseRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.reactive.asFlow
-import kotlinx.coroutines.reactive.awaitSingle
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.data.mongodb.core.ReactiveMongoTemplate
 import org.springframework.data.mongodb.core.query.Criteria
-import org.springframework.data.mongodb.core.query.Query.query
 import org.springframework.stereotype.Repository
 
 @Repository
 class CmsPressReleaseRepositoryImpl(
     private val reactiveMongoTemplate: ReactiveMongoTemplate
 ) : CmsBaseRepository<CmsPressRelease> {
-    override suspend fun countByCriteria(criteria: Criteria): Long =
-        reactiveMongoTemplate.count(query(criteria), CmsPressRelease::class.java).awaitSingle()
 
     override fun findByCriteria(criteria: Criteria, pageable: Pageable, sort: Sort): Flow<CmsPressRelease> =
         reactiveMongoTemplate.find(buildQuery(criteria, pageable, sort), CmsPressRelease::class.java)

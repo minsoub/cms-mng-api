@@ -1,6 +1,8 @@
 package com.bithumbsystems.cms.api.model.request
 
+import com.bithumbsystems.cms.api.exception.ValidationException
 import com.bithumbsystems.cms.api.model.constants.ShareConstants.NOTICE_TITLE
+import com.bithumbsystems.cms.api.model.enums.ErrorCode
 import com.bithumbsystems.cms.persistence.mongo.entity.CmsNotice
 import io.swagger.v3.oas.annotations.media.Schema
 import javax.validation.constraints.NotBlank
@@ -58,8 +60,8 @@ fun NoticeRequest.toEntity(): CmsNotice {
 
 fun NoticeRequest.validateNotice(): Boolean {
     return when {
-        categoryIds.isEmpty() || categoryIds.size > 2 -> {
-            false
+        categoryIds.isEmpty() || categoryIds.containsAll(listOf("", "")) || categoryIds.size > 2 -> {
+            throw ValidationException(ErrorCode.INVALID_CATEGORY.message)
         }
 
         else -> {
