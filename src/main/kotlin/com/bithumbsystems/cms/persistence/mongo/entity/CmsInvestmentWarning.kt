@@ -21,6 +21,7 @@ class CmsInvestmentWarning(
     val createAccountEmail: String,
     var createDate: LocalDateTime = LocalDateTime.now()
 ) {
+    var searchContent: String? = "${title.trim()} | ${content.replace("&nbsp;", "").replace("<[^>]*>".toRegex(), "")}"
     var isFixTop: Boolean = false
     var isShow: Boolean = false
     var isDelete: Boolean = false
@@ -67,6 +68,7 @@ fun CmsInvestmentWarning.setUpdateInfo(
     }
     isDelete = request.isDelete
     content = request.content
+    searchContent = "${title.trim()} | ${content.replace("&nbsp;", "").replace("<[^>]*>".toRegex(), "")}"
     fileId = fileRequest?.fileKey ?: request.fileId
     shareTitle = request.shareTitle ?: title
     shareDescription = request.shareDescription
